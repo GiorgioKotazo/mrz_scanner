@@ -17,7 +17,11 @@ A local Rust CLI for extracting data from the machine-readable zone (MRZ) of pas
 
 ## Building
 
-Rust 1.92 or newer, `curl`, and `sha256sum` are required.
+Rust 1.92 or newer is required (also the minimum required by `ort`).
+The download script needs Bash, `curl`, and `sha256sum`. Linux CPU builds and
+regressions are exercised by CI on Ubuntu 24.04; other platforms and GPU execution
+are not covered by this project's tests. On Ubuntu, install the build dependencies
+with `sudo apt-get install build-essential pkg-config libssl-dev curl`.
 
 ```bash
 cd mrz_scanner
@@ -25,7 +29,9 @@ cd mrz_scanner
 cargo build --release
 ```
 
-ONNX Runtime is linked into the binary. To run it, you need the executable and two external ONNX models; Python is not required.
+With the default Linux build, ONNX Runtime is linked into the binary. To run it,
+you need the executable, its system runtime libraries (including the C/C++ runtime),
+and two external ONNX models; Python is not required.
 
 ## Running
 
@@ -41,7 +47,9 @@ By default, models are loaded from `./models`. To specify a different directory 
   --threads 2
 ```
 
-JPEG and PNG are supported. The `--no-rotate` flag disables automatic rotations; center cropping may still be used as a fallback. For maximum accuracy, it is best to run the program without this flag.
+JPEG and PNG are supported. The `--no-rotate` flag disables automatic rotations;
+center cropping may still be used as a fallback. Leave rotations enabled to try
+all four orientations; this does not guarantee successful recognition.
 `--threads` must be an integer greater than zero (default: `2`).
 Use `--help` for usage or `--version` for the application version; neither requires
 an image or model files.
@@ -117,6 +125,21 @@ Attempts crop before rotating clockwise. Detection letterboxing is undone inside
 the scanner; then the inverse rotation and crop offset map the result back to the
 original file. Full/0° borrows the original RGB buffer, crop/0° borrows one crop
 buffer, and nonzero rotations allocate only their rotated buffer.
+
+### Tested scope and known limitations
+
+The public suite checks the official DOCSAID image, synthetic examples of all five
+formats, four TD3 orientations, a center-crop case, a 6000×4000 input, and four
+no-MRZ images. Additional model tests cover a 608×448 document and a mild
+perspective transform. These cases are regression coverage, not a general accuracy
+guarantee for arbitrary documents, perspectives, or backgrounds.
+
+Four public fixtures still have known OCR failures: a 232×160 document, a strongly
+stretched document, a 6000×800 panorama, and an odd-sized image whose given name is
+misread even though its checksums pass. Odd-size geometry and bounded detection
+memory are tested, but neither guarantees OCR accuracy. These cases remain explicit
+`XFAIL`s, not successful recognition tests; see the
+[regression coverage and limitations](tests/regression/README.md#покрытие-и-текущий-результат).
 
 ## Debugging
 
@@ -202,7 +225,8 @@ The official DOCSAID MRZScanner 1.0.7 two-stage weights are used:
 - `mrz_detection_20250222_fp32.onnx`;
 - `mrz_recognition_20250221_fp32.onnx`.
 
-The download script verifies the SHA-256 against the official DOCSAID catalog. The code and official weights are licensed under Apache-2.0. Sources:
+The download script verifies the SHA-256 against pinned hashes from the official
+DOCSAID catalog. Sources:
 
 - https://github.com/DocsaidLab/MRZScanner
 - https://docsaid.org/en/models/mrzscanner
@@ -210,3 +234,16 @@ The download script verifies the SHA-256 against the official DOCSAID catalog. T
 - https://github.com/ruledicaprio/SynthPass/tree/main/crates/mrz
 
 Check digits confirm checksum consistency, not document authenticity. In TD3, the given name and surname are not covered by a check digit, so for critical operations they must also be verified against the visual inspection zone.
+
+## License
+
+This project's code is licensed under **Apache-2.0**; see the full text in
+[LICENSE](LICENSE). The package metadata in `Cargo.toml` uses the same license.
+
+DOCSAID MRZScanner and its official model weights are provided under the upstream
+[Apache-2.0 license](https://github.com/DocsaidLab/MRZScanner/blob/7f98880115441c8e42424eda1dc8f1abd4e39377/LICENSE).
+Dependencies and third-party fixtures retain their respective licenses; the
+project's license does not replace them. Fixture provenance and license copies are
+documented in the [regression README](tests/regression/README.md#происхождение-публичных-фотографий),
+including [DOCSAID](tests/regression/fixtures/LICENSE-DOCSAID) and
+[Pillow](tests/regression/fixtures/LICENSE-Pillow).

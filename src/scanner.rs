@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use anyhow::{Context, Result, bail};
 use image::RgbImage;
@@ -103,7 +103,6 @@ impl MrzScanner {
 struct OnnxModel {
     session: Session,
     output_name: String,
-    _path: PathBuf,
 }
 
 impl OnnxModel {
@@ -132,7 +131,6 @@ impl OnnxModel {
         Ok(Self {
             session,
             output_name,
-            _path: path.to_owned(),
         })
     }
 
