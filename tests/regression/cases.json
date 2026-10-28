@@ -1,0 +1,294 @@
+[
+  {
+    "id": "td1",
+    "image": "fixtures/td1.png",
+    "category": "valid",
+    "size": [
+      618,
+      640
+    ],
+    "sha256": "4902c4cb4fd5d07c603ff398c7e1af7205adbeb33a13ce071f34ed22cf61fdc5",
+    "source_lines": [
+      "I<UTOX123456785<<<<<<<<<<<<<<<",
+      "7408122F1204159UTO<<<<<<<<<<<0",
+      "TESTER<<ANNA<MARIA<<<<<<<<<<<<"
+    ],
+    "format": "Td1"
+  },
+  {
+    "id": "td2",
+    "image": "fixtures/td2.png",
+    "category": "valid",
+    "size": [
+      725,
+      640
+    ],
+    "sha256": "6a80c08a21e8e4c9ae558a39b04bcf24d7e3fae3808f2f492c728959f68ea209",
+    "source_lines": [
+      "I<UTOTESTER<<ANNA<MARIA<<<<<<<<<<<<<",
+      "X123456785UTO7408122F1204159<<<<<<<0"
+    ],
+    "format": "Td2"
+  },
+  {
+    "id": "td3",
+    "image": "fixtures/td3.png",
+    "category": "valid",
+    "size": [
+      869,
+      640
+    ],
+    "sha256": "7f3d2b175c3013c3e08d6b8bf231090220efab022eb7c3a772073e6c76e6c162",
+    "source_lines": [
+      "P<UTOTESTER<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<<<",
+      "X123456785UTO7408122F1204159ZE184226B<<<<<12"
+    ],
+    "format": "Td3"
+  },
+  {
+    "id": "mrv-a",
+    "image": "fixtures/mrv-a.png",
+    "category": "valid",
+    "size": [
+      869,
+      640
+    ],
+    "sha256": "fa2066671088fe2cda51f68eae737bca9ab9fc15a2f4e738facceb29ae589b82",
+    "source_lines": [
+      "V<UTOTESTER<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<<<",
+      "X123456785UTO7408122F1204159VISATEST<<<<<<<<"
+    ],
+    "format": "MrvA"
+  },
+  {
+    "id": "mrv-b",
+    "image": "fixtures/mrv-b.png",
+    "category": "valid",
+    "size": [
+      725,
+      640
+    ],
+    "sha256": "9d4bacb492b82927e84d5e08b35cecf24fd245e8b2e32715257a7af43faa9752",
+    "source_lines": [
+      "V<UTOTESTER<<ANNA<MARIA<<<<<<<<<<<<<",
+      "X123456785UTO7408122F1204159<<<<<<<<"
+    ],
+    "format": "MrvB"
+  },
+  {
+    "id": "td3-rotate-90",
+    "image": "fixtures/td3-rotate-90.png",
+    "category": "valid",
+    "size": [
+      640,
+      869
+    ],
+    "sha256": "b89b09d45a0b4d006393ebe5eccd6e2833ceb20be4acbeda8f08eee291b960c5",
+    "source_lines": [
+      "P<UTOTESTER<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<<<",
+      "X123456785UTO7408122F1204159ZE184226B<<<<<12"
+    ],
+    "format": "Td3"
+  },
+  {
+    "id": "td3-rotate-180",
+    "image": "fixtures/td3-rotate-180.png",
+    "category": "valid",
+    "size": [
+      869,
+      640
+    ],
+    "sha256": "632d7de211195fb12278b9fc539c15e576e7a5ec28e5fcca7f9d6dfcaba7e0d8",
+    "source_lines": [
+      "P<UTOTESTER<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<<<",
+      "X123456785UTO7408122F1204159ZE184226B<<<<<12"
+    ],
+    "format": "Td3"
+  },
+  {
+    "id": "td3-rotate-270",
+    "image": "fixtures/td3-rotate-270.png",
+    "category": "valid",
+    "size": [
+      640,
+      869
+    ],
+    "sha256": "01ff3754fb8d574506aaeca6301c834fabc76678f683a76397d6684f8cbe42cd",
+    "source_lines": [
+      "P<UTOTESTER<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<<<",
+      "X123456785UTO7408122F1204159ZE184226B<<<<<12"
+    ],
+    "format": "Td3"
+  },
+  {
+    "id": "odd-size",
+    "image": "fixtures/odd-size.png",
+    "category": "valid",
+    "size": [
+      870,
+      640
+    ],
+    "sha256": "26046482b0c7b87057b559d2f62c0bf122b1adfbda1f56bfa1e16693d84eb482",
+    "source_lines": [
+      "P<UTOTESTER<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<<<",
+      "X123456785UTO7408122F1204159ZE184226B<<<<<12"
+    ],
+    "format": "Td3"
+  },
+  {
+    "id": "center-crop",
+    "image": "fixtures/center-crop.png",
+    "category": "valid",
+    "size": [
+      869,
+      3476
+    ],
+    "sha256": "aed297b2d304b9e0cdc223074f573b6b0effe291be87f85dd0f4246d6268d2ce",
+    "source_lines": [
+      "P<UTOTESTER<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<<<",
+      "X123456785UTO7408122F1204159ZE184226B<<<<<12"
+    ],
+    "format": "Td3",
+    "require_crop": true
+  },
+  {
+    "id": "tiny",
+    "image": "fixtures/tiny.png",
+    "category": "valid",
+    "size": [
+      232,
+      160
+    ],
+    "sha256": "fefc4efdf0d9d79c018a506be31bd3902926e55844e7b0e5b04feed421f5d10b",
+    "source_lines": [
+      "P<UTOTESTER<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<<<",
+      "X123456785UTO7408122F1204159ZE184226B<<<<<12"
+    ],
+    "format": "Td3"
+  },
+  {
+    "id": "stretched",
+    "image": "fixtures/stretched.png",
+    "category": "valid",
+    "size": [
+      1800,
+      320
+    ],
+    "sha256": "3271ee5e9e307d689957a037f91c5d969260739a65c5db0d1fd87c345b674f80",
+    "source_lines": [
+      "P<UTOTESTER<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<<<",
+      "X123456785UTO7408122F1204159ZE184226B<<<<<12"
+    ],
+    "format": "Td3"
+  },
+  {
+    "id": "large",
+    "image": "fixtures/large.png",
+    "category": "valid",
+    "size": [
+      6000,
+      4000
+    ],
+    "sha256": "da10fedaae0c290e4e0ef51d289c02a553d506bada839486bd17a4954e334571",
+    "source_lines": [
+      "P<UTOTESTER<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<<<",
+      "X123456785UTO7408122F1204159ZE184226B<<<<<12"
+    ],
+    "format": "Td3",
+    "slow": true
+  },
+  {
+    "id": "panorama",
+    "image": "fixtures/panorama.png",
+    "category": "valid",
+    "size": [
+      6000,
+      800
+    ],
+    "sha256": "d3884558726504c691b33563eeb08e86e4386551b0bb3f45e02b1de70718eabb",
+    "source_lines": [
+      "P<UTOTESTER<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<<<",
+      "X123456785UTO7408122F1204159ZE184226B<<<<<12"
+    ],
+    "format": "Td3",
+    "slow": true
+  },
+  {
+    "id": "white",
+    "image": "fixtures/white.png",
+    "category": "absent",
+    "size": [
+      640,
+      480
+    ],
+    "sha256": "e90072b4050a2030b13a7a2b73a3c60124bd697e7d17ed352086a9c693a17b8a"
+  },
+  {
+    "id": "black",
+    "image": "fixtures/black.png",
+    "category": "absent",
+    "size": [
+      640,
+      480
+    ],
+    "sha256": "441da7236f6ffdd8fb4cdfa2d9ce7b8d8df8cf2f7a8e82c530714d92266ce613"
+  },
+  {
+    "id": "solid",
+    "image": "fixtures/solid.png",
+    "category": "absent",
+    "size": [
+      640,
+      480
+    ],
+    "sha256": "34293560e034069cda888569f7aa5e0ffdc3b81b7f149e3bc85625200c7e692a"
+  },
+  {
+    "id": "checksum-failed",
+    "image": "fixtures/checksum-failed.png",
+    "category": "unverified",
+    "size": [
+      869,
+      640
+    ],
+    "sha256": "20e56a5596218a7485b7d4d96c173a99538c77a42d32dc6e92754f6a65a6af0a",
+    "source_lines": [
+      "P<UTOTESTER<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<<<",
+      "Y123456785UTO7408122F1204159ZE184226B<<<<<12"
+    ]
+  },
+  {
+    "id": "parse-failed",
+    "image": "fixtures/parse-failed.png",
+    "category": "unverified",
+    "size": [
+      869,
+      640
+    ],
+    "sha256": "8e45c8d9687021625919dc3101328b1a446d72038f23ff9663255dc2abe014dd",
+    "source_lines": [
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZ<<<<<<<<<<<<<<<<<<",
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZ<<<<<<<<<<<<<<<<<<"
+    ]
+  },
+  {
+    "id": "docsaid",
+    "image": "fixtures/docsaid.jpg",
+    "category": "valid",
+    "size": [
+      2160,
+      3840
+    ],
+    "sha256": "c1a672b074a708cede498490eca999dc42ee41a79af5d97b4dff12df725daa74"
+  },
+  {
+    "id": "photo",
+    "image": "fixtures/photo.jpg",
+    "category": "absent",
+    "size": [
+      128,
+      128
+    ],
+    "sha256": "ffe89a0ab0e94114e10777e7313d7fa83d634e34ebc2ea7479085cffa504c920"
+  }
+]

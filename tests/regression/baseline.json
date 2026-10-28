@@ -1,0 +1,1369 @@
+{
+  "environment": {
+    "platform": "Linux-6.6.114.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "python": "3.12.3",
+    "threads": 2,
+    "binary_sha256": "a8a827604b9b95c120ff3bde38e177d51a0bcdebf59352243d0b918be413a664",
+    "source_sha256": {
+      "src/image_processing.rs": "d1d8a59de933afadaf843ed0768acecdfa2ea32209d8c5953da3a27c24fb2d77",
+      "src/main.rs": "e2cda7a641716521bf382498b7023b27e8c1adc3ec0ad1f2d0ca5a77e1217853",
+      "src/scanner.rs": "2380de67126d08bf2c1e0d425ecb7b2da600af999987bac3c3569ea5eb19d60a",
+      "Cargo.lock": "21a8f3b3a4d4bccc54f6e90156f46befddd067c0adf462a68b96abde5c5b637b",
+      "Cargo.toml": "a38f80ac434d0fb6f66a77e178de34c303ea9ed03681f13791377c772cb57d97"
+    },
+    "models": {
+      "mrz_detection_20250222_fp32.onnx": "0786844728d828dc68c19b844aa87e2b29fdba3a587468f2863824d116ffc269",
+      "mrz_recognition_20250221_fp32.onnx": "07cef987fc1852aac12f18e1269fbaf1e2644579ca5743061d6f9cec7bef77c0"
+    }
+  },
+  "cases": {
+    "td1": {
+      "sha256": "4902c4cb4fd5d07c603ff398c7e1af7205adbeb33a13ce071f34ed22cf61fdc5",
+      "size": [
+        618,
+        640
+      ],
+      "result": {
+        "exit": 0,
+        "candidate": true,
+        "ocr_lines": [
+          "I<UT0X123456785<<<<<<<<<<<<<<<",
+          "74O8122FI2O4159UT0<<<<<<<<<<<0",
+          "TESTER<<ANNA<MARIA<<<<<<<<<<<<"
+        ],
+        "fields": {
+          "Format": "Td1",
+          "Document type": "I",
+          "Surname": "TESTER",
+          "Given names": "ANNA MARIA",
+          "Sex": "F",
+          "Date of birth": "1974-08-12",
+          "Nationality": "UTO",
+          "Document number": "X12345678",
+          "Issuing country": "UTO",
+          "Expiration date": "2012-04-15",
+          "Personal number": ""
+        },
+        "checks": {
+          "Document number": "OK",
+          "Date of birth": "OK",
+          "Expiration date": "OK",
+          "Personal number": "N/A",
+          "Composite": "OK"
+        },
+        "polygon": [
+          [
+            36.0,
+            433.0
+          ],
+          [
+            583.0,
+            433.0
+          ],
+          [
+            583.0,
+            546.0
+          ],
+          [
+            36.0,
+            546.0
+          ]
+        ],
+        "rotation": 0,
+        "center_crop": true,
+        "recovered": false,
+        "parse_failed": false,
+        "checksum_status": "OK",
+        "normalized_lines": [
+          "I<UTOX123456785<<<<<<<<<<<<<<<",
+          "7408122F1204159UTO<<<<<<<<<<<0",
+          "TESTER<<ANNA<MARIA<<<<<<<<<<<<"
+        ],
+        "metrics": {
+          "elapsed_seconds": 2.87,
+          "max_rss_kib": 775124
+        }
+      }
+    },
+    "td2": {
+      "sha256": "6a80c08a21e8e4c9ae558a39b04bcf24d7e3fae3808f2f492c728959f68ea209",
+      "size": [
+        725,
+        640
+      ],
+      "result": {
+        "exit": 0,
+        "candidate": true,
+        "ocr_lines": [
+          "I<UTOTESTER<<ANNA<MARIA<<<<<<<<<<<<<",
+          "X123456785UT07408122F1204159<<<<<<<0"
+        ],
+        "fields": {
+          "Format": "Td2",
+          "Document type": "I",
+          "Surname": "TESTER",
+          "Given names": "ANNA MARIA",
+          "Sex": "F",
+          "Date of birth": "1974-08-12",
+          "Nationality": "UTO",
+          "Document number": "X12345678",
+          "Issuing country": "UTO",
+          "Expiration date": "2012-04-15",
+          "Personal number": ""
+        },
+        "checks": {
+          "Document number": "OK",
+          "Date of birth": "OK",
+          "Expiration date": "OK",
+          "Personal number": "N/A",
+          "Composite": "OK"
+        },
+        "polygon": [
+          [
+            35.0,
+            442.0
+          ],
+          [
+            687.0,
+            442.0
+          ],
+          [
+            687.0,
+            515.0
+          ],
+          [
+            35.0,
+            515.0
+          ]
+        ],
+        "rotation": 0,
+        "center_crop": false,
+        "recovered": false,
+        "parse_failed": false,
+        "checksum_status": "OK",
+        "normalized_lines": [
+          "I<UTOTESTER<<ANNA<MARIA<<<<<<<<<<<<<",
+          "X123456785UTO7408122F1204159<<<<<<<0"
+        ],
+        "metrics": {
+          "elapsed_seconds": 2.65,
+          "max_rss_kib": 779168
+        }
+      }
+    },
+    "td3": {
+      "sha256": "7f3d2b175c3013c3e08d6b8bf231090220efab022eb7c3a772073e6c76e6c162",
+      "size": [
+        869,
+        640
+      ],
+      "result": {
+        "exit": 0,
+        "candidate": true,
+        "ocr_lines": [
+          "P<UT0TESTER<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<<<",
+          "X123456785UT074O8122FI204159ZE184226B<<<<<12"
+        ],
+        "fields": {
+          "Format": "Td3",
+          "Document type": "P",
+          "Surname": "TESTER",
+          "Given names": "ANNA MARIA",
+          "Sex": "F",
+          "Date of birth": "1974-08-12",
+          "Nationality": "UTO",
+          "Document number": "X12345678",
+          "Issuing country": "UTO",
+          "Expiration date": "2012-04-15",
+          "Personal number": "ZE184226B"
+        },
+        "checks": {
+          "Document number": "OK",
+          "Date of birth": "OK",
+          "Expiration date": "OK",
+          "Personal number": "OK",
+          "Composite": "OK"
+        },
+        "polygon": [
+          [
+            34.0,
+            443.0
+          ],
+          [
+            834.0,
+            443.0
+          ],
+          [
+            834.0,
+            516.0
+          ],
+          [
+            34.0,
+            516.0
+          ]
+        ],
+        "rotation": 0,
+        "center_crop": false,
+        "recovered": false,
+        "parse_failed": false,
+        "checksum_status": "OK",
+        "normalized_lines": [
+          "P<UTOTESTER<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<<<",
+          "X123456785UTO7408122F1204159ZE184226B<<<<<12"
+        ],
+        "metrics": {
+          "elapsed_seconds": 0.48,
+          "max_rss_kib": 691244
+        }
+      }
+    },
+    "mrv-a": {
+      "sha256": "fa2066671088fe2cda51f68eae737bca9ab9fc15a2f4e738facceb29ae589b82",
+      "size": [
+        869,
+        640
+      ],
+      "result": {
+        "exit": 0,
+        "candidate": true,
+        "ocr_lines": [
+          "V<UT0TESTER<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<<<",
+          "X123456785UT074O8122F12O4159VISATEST<<<<<<<<"
+        ],
+        "fields": {
+          "Format": "MrvA",
+          "Document type": "V",
+          "Surname": "TESTER",
+          "Given names": "ANNA MARIA",
+          "Sex": "F",
+          "Date of birth": "1974-08-12",
+          "Nationality": "UTO",
+          "Document number": "X12345678",
+          "Issuing country": "UTO",
+          "Expiration date": "2012-04-15",
+          "Personal number": ""
+        },
+        "checks": {
+          "Document number": "OK",
+          "Date of birth": "OK",
+          "Expiration date": "OK",
+          "Personal number": "N/A",
+          "Composite": "N/A"
+        },
+        "polygon": [
+          [
+            34.0,
+            443.0
+          ],
+          [
+            835.0,
+            443.0
+          ],
+          [
+            835.0,
+            516.0
+          ],
+          [
+            34.0,
+            516.0
+          ]
+        ],
+        "rotation": 0,
+        "center_crop": false,
+        "recovered": false,
+        "parse_failed": false,
+        "checksum_status": "OK",
+        "normalized_lines": [
+          "V<UTOTESTER<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<<<",
+          "X123456785UTO7408122F1204159VISATEST<<<<<<<<"
+        ],
+        "metrics": {
+          "elapsed_seconds": 5.63,
+          "max_rss_kib": 781100
+        }
+      }
+    },
+    "mrv-b": {
+      "sha256": "9d4bacb492b82927e84d5e08b35cecf24fd245e8b2e32715257a7af43faa9752",
+      "size": [
+        725,
+        640
+      ],
+      "result": {
+        "exit": 0,
+        "candidate": true,
+        "ocr_lines": [
+          "V<UT0TESTER<<ANNA<MARIA<<<<<<<<<<<<<",
+          "X123456785UT07408122F1204159<<<<<<<<"
+        ],
+        "fields": {
+          "Format": "MrvB",
+          "Document type": "V",
+          "Surname": "TESTER",
+          "Given names": "ANNA MARIA",
+          "Sex": "F",
+          "Date of birth": "1974-08-12",
+          "Nationality": "UTO",
+          "Document number": "X12345678",
+          "Issuing country": "UTO",
+          "Expiration date": "2012-04-15",
+          "Personal number": ""
+        },
+        "checks": {
+          "Document number": "OK",
+          "Date of birth": "OK",
+          "Expiration date": "OK",
+          "Personal number": "N/A",
+          "Composite": "N/A"
+        },
+        "polygon": [
+          [
+            35.0,
+            443.0
+          ],
+          [
+            689.0,
+            443.0
+          ],
+          [
+            689.0,
+            515.0
+          ],
+          [
+            35.0,
+            515.0
+          ]
+        ],
+        "rotation": 0,
+        "center_crop": false,
+        "recovered": false,
+        "parse_failed": false,
+        "checksum_status": "OK",
+        "normalized_lines": [
+          "V<UTOTESTER<<ANNA<MARIA<<<<<<<<<<<<<",
+          "X123456785UTO7408122F1204159<<<<<<<<"
+        ],
+        "metrics": {
+          "elapsed_seconds": 2.66,
+          "max_rss_kib": 786076
+        }
+      }
+    },
+    "td3-rotate-90": {
+      "sha256": "b89b09d45a0b4d006393ebe5eccd6e2833ceb20be4acbeda8f08eee291b960c5",
+      "size": [
+        640,
+        869
+      ],
+      "result": {
+        "exit": 0,
+        "candidate": true,
+        "ocr_lines": [
+          "P<UT0TESTER<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<<<",
+          "X123456785UT074O8122FI204159ZE184226B<<<<<12"
+        ],
+        "fields": {
+          "Format": "Td3",
+          "Document type": "P",
+          "Surname": "TESTER",
+          "Given names": "ANNA MARIA",
+          "Sex": "F",
+          "Date of birth": "1974-08-12",
+          "Nationality": "UTO",
+          "Document number": "X12345678",
+          "Issuing country": "UTO",
+          "Expiration date": "2012-04-15",
+          "Personal number": "ZE184226B"
+        },
+        "checks": {
+          "Document number": "OK",
+          "Date of birth": "OK",
+          "Expiration date": "OK",
+          "Personal number": "OK",
+          "Composite": "OK"
+        },
+        "polygon": [
+          [
+            34.0,
+            443.0
+          ],
+          [
+            834.0,
+            443.0
+          ],
+          [
+            834.0,
+            516.0
+          ],
+          [
+            34.0,
+            516.0
+          ]
+        ],
+        "rotation": 90,
+        "center_crop": false,
+        "recovered": false,
+        "parse_failed": false,
+        "checksum_status": "OK",
+        "normalized_lines": [
+          "P<UTOTESTER<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<<<",
+          "X123456785UTO7408122F1204159ZE184226B<<<<<12"
+        ],
+        "metrics": {
+          "elapsed_seconds": 0.8,
+          "max_rss_kib": 776880
+        }
+      }
+    },
+    "td3-rotate-180": {
+      "sha256": "632d7de211195fb12278b9fc539c15e576e7a5ec28e5fcca7f9d6dfcaba7e0d8",
+      "size": [
+        869,
+        640
+      ],
+      "result": {
+        "exit": 0,
+        "candidate": true,
+        "ocr_lines": [
+          "P<UT0TESTER<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<<<",
+          "X123456785UT074O8122FI204159ZE184226B<<<<<12"
+        ],
+        "fields": {
+          "Format": "Td3",
+          "Document type": "P",
+          "Surname": "TESTER",
+          "Given names": "ANNA MARIA",
+          "Sex": "F",
+          "Date of birth": "1974-08-12",
+          "Nationality": "UTO",
+          "Document number": "X12345678",
+          "Issuing country": "UTO",
+          "Expiration date": "2012-04-15",
+          "Personal number": "ZE184226B"
+        },
+        "checks": {
+          "Document number": "OK",
+          "Date of birth": "OK",
+          "Expiration date": "OK",
+          "Personal number": "OK",
+          "Composite": "OK"
+        },
+        "polygon": [
+          [
+            34.0,
+            443.0
+          ],
+          [
+            834.0,
+            443.0
+          ],
+          [
+            834.0,
+            516.0
+          ],
+          [
+            34.0,
+            516.0
+          ]
+        ],
+        "rotation": 180,
+        "center_crop": false,
+        "recovered": false,
+        "parse_failed": false,
+        "checksum_status": "OK",
+        "normalized_lines": [
+          "P<UTOTESTER<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<<<",
+          "X123456785UTO7408122F1204159ZE184226B<<<<<12"
+        ],
+        "metrics": {
+          "elapsed_seconds": 1.12,
+          "max_rss_kib": 780460
+        }
+      }
+    },
+    "td3-rotate-270": {
+      "sha256": "01ff3754fb8d574506aaeca6301c834fabc76678f683a76397d6684f8cbe42cd",
+      "size": [
+        640,
+        869
+      ],
+      "result": {
+        "exit": 0,
+        "candidate": true,
+        "ocr_lines": [
+          "P<UT0TESTER<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<<<",
+          "X123456785UT074O8122FI204159ZE184226B<<<<<12"
+        ],
+        "fields": {
+          "Format": "Td3",
+          "Document type": "P",
+          "Surname": "TESTER",
+          "Given names": "ANNA MARIA",
+          "Sex": "F",
+          "Date of birth": "1974-08-12",
+          "Nationality": "UTO",
+          "Document number": "X12345678",
+          "Issuing country": "UTO",
+          "Expiration date": "2012-04-15",
+          "Personal number": "ZE184226B"
+        },
+        "checks": {
+          "Document number": "OK",
+          "Date of birth": "OK",
+          "Expiration date": "OK",
+          "Personal number": "OK",
+          "Composite": "OK"
+        },
+        "polygon": [
+          [
+            34.0,
+            443.0
+          ],
+          [
+            834.0,
+            443.0
+          ],
+          [
+            834.0,
+            516.0
+          ],
+          [
+            34.0,
+            516.0
+          ]
+        ],
+        "rotation": 270,
+        "center_crop": false,
+        "recovered": false,
+        "parse_failed": false,
+        "checksum_status": "OK",
+        "normalized_lines": [
+          "P<UTOTESTER<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<<<",
+          "X123456785UTO7408122F1204159ZE184226B<<<<<12"
+        ],
+        "metrics": {
+          "elapsed_seconds": 1.6,
+          "max_rss_kib": 779820
+        }
+      }
+    },
+    "odd-size": {
+      "sha256": "26046482b0c7b87057b559d2f62c0bf122b1adfbda1f56bfa1e16693d84eb482",
+      "size": [
+        870,
+        640
+      ],
+      "result": {
+        "exit": 0,
+        "candidate": true,
+        "ocr_lines": [
+          "P<UT0TESTER<<ANNA<MMRIA<<<<<<<<<<<<<<<<<<<<<",
+          "X123456785UT074O8122F12O4159ZE184226B<<<<<12"
+        ],
+        "fields": {
+          "Format": "Td3",
+          "Document type": "P",
+          "Surname": "TESTER",
+          "Given names": "ANNA MMRIA",
+          "Sex": "F",
+          "Date of birth": "1974-08-12",
+          "Nationality": "UTO",
+          "Document number": "X12345678",
+          "Issuing country": "UTO",
+          "Expiration date": "2012-04-15",
+          "Personal number": "ZE184226B"
+        },
+        "checks": {
+          "Document number": "OK",
+          "Date of birth": "OK",
+          "Expiration date": "OK",
+          "Personal number": "OK",
+          "Composite": "OK"
+        },
+        "polygon": [
+          [
+            34.0,
+            444.0
+          ],
+          [
+            832.0,
+            444.0
+          ],
+          [
+            832.0,
+            516.0
+          ],
+          [
+            34.0,
+            516.0
+          ]
+        ],
+        "rotation": 0,
+        "center_crop": false,
+        "recovered": false,
+        "parse_failed": false,
+        "checksum_status": "OK",
+        "normalized_lines": [
+          "P<UTOTESTER<<ANNA<MMRIA<<<<<<<<<<<<<<<<<<<<<",
+          "X123456785UTO7408122F1204159ZE184226B<<<<<12"
+        ],
+        "metrics": {
+          "elapsed_seconds": 0.48,
+          "max_rss_kib": 679856
+        }
+      }
+    },
+    "center-crop": {
+      "sha256": "aed297b2d304b9e0cdc223074f573b6b0effe291be87f85dd0f4246d6268d2ce",
+      "size": [
+        869,
+        3476
+      ],
+      "result": {
+        "exit": 0,
+        "candidate": true,
+        "ocr_lines": [
+          "P<UT0TESTER<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<<<",
+          "X123456785UT074O8122FI2O4159ZE184226B<<<<<12"
+        ],
+        "fields": {
+          "Format": "Td3",
+          "Document type": "P",
+          "Surname": "TESTER",
+          "Given names": "ANNA MARIA",
+          "Sex": "F",
+          "Date of birth": "1974-08-12",
+          "Nationality": "UTO",
+          "Document number": "X12345678",
+          "Issuing country": "UTO",
+          "Expiration date": "2012-04-15",
+          "Personal number": "ZE184226B"
+        },
+        "checks": {
+          "Document number": "OK",
+          "Date of birth": "OK",
+          "Expiration date": "OK",
+          "Personal number": "OK",
+          "Composite": "OK"
+        },
+        "polygon": [
+          [
+            34.0,
+            559.0
+          ],
+          [
+            834.0,
+            559.0
+          ],
+          [
+            834.0,
+            631.0
+          ],
+          [
+            34.0,
+            631.0
+          ]
+        ],
+        "rotation": 0,
+        "center_crop": true,
+        "recovered": false,
+        "parse_failed": false,
+        "checksum_status": "OK",
+        "normalized_lines": [
+          "P<UTOTESTER<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<<<",
+          "X123456785UTO7408122F1204159ZE184226B<<<<<12"
+        ],
+        "metrics": {
+          "elapsed_seconds": 2.19,
+          "max_rss_kib": 850792
+        }
+      }
+    },
+    "tiny": {
+      "sha256": "fefc4efdf0d9d79c018a506be31bd3902926e55844e7b0e5b04feed421f5d10b",
+      "size": [
+        232,
+        160
+      ],
+      "result": {
+        "exit": 2,
+        "candidate": true,
+        "ocr_lines": [
+          "P<UT0TESTER<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<<<",
+          "XI234567B5UT07408I22FI284I59ZE1842268<<<<<I2"
+        ],
+        "fields": {
+          "Format": "Td3",
+          "Document type": "P",
+          "Surname": "TESTER",
+          "Given names": "ANNA MARIA",
+          "Sex": "F",
+          "Date of birth": "1974-08-12",
+          "Nationality": "UTO",
+          "Document number": "XI234567B",
+          "Issuing country": "UTO",
+          "Expiration date": "2012-84-15",
+          "Personal number": "ZE1842268"
+        },
+        "checks": {
+          "Document number": "FAILED",
+          "Date of birth": "OK",
+          "Expiration date": "FAILED",
+          "Personal number": "FAILED",
+          "Composite": "FAILED"
+        },
+        "polygon": [
+          [
+            9.0,
+            109.0
+          ],
+          [
+            223.0,
+            110.0
+          ],
+          [
+            222.0,
+            130.0
+          ],
+          [
+            8.0,
+            128.0
+          ]
+        ],
+        "rotation": 0,
+        "center_crop": false,
+        "recovered": false,
+        "parse_failed": false,
+        "checksum_status": "FAILED",
+        "normalized_lines": [
+          "P<UTOTESTER<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<<<",
+          "XI234567B5UTO7408122F1284159ZE1842268<<<<<12"
+        ],
+        "metrics": {
+          "elapsed_seconds": 2.65,
+          "max_rss_kib": 762048
+        }
+      }
+    },
+    "stretched": {
+      "sha256": "3271ee5e9e307d689957a037f91c5d969260739a65c5db0d1fd87c345b674f80",
+      "size": [
+        1800,
+        320
+      ],
+      "result": {
+        "exit": 2,
+        "candidate": true,
+        "ocr_lines": [
+          "CIVI9ZE5AEB1GONNGI0SPISGRIQG2EIGRESRRRI02II2",
+          "TTT08888DDTDDF8FEFFFDTD9E999999DDDD9999TTTT9"
+        ],
+        "fields": {},
+        "checks": {},
+        "polygon": [
+          [
+            71.0,
+            212.0
+          ],
+          [
+            1730.0,
+            212.0
+          ],
+          [
+            1730.0,
+            356.0
+          ],
+          [
+            71.0,
+            356.0
+          ]
+        ],
+        "rotation": 0,
+        "center_crop": false,
+        "recovered": false,
+        "parse_failed": true,
+        "checksum_status": "NOT VERIFIED",
+        "normalized_lines": [
+          "CIVI9ZE5AEB1GONNGI0SPISGRIQG2EIGRESRRRI02II2",
+          "TTT08888DDTDDF8FEFFFDTD9E999999DDDD9999TTTT9"
+        ],
+        "metrics": {
+          "elapsed_seconds": 2.73,
+          "max_rss_kib": 800676
+        }
+      }
+    },
+    "large": {
+      "sha256": "da10fedaae0c290e4e0ef51d289c02a553d506bada839486bd17a4954e334571",
+      "size": [
+        6000,
+        4000
+      ],
+      "result": {
+        "exit": 0,
+        "candidate": true,
+        "ocr_lines": [
+          "P<UT0TESTER<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<<<",
+          "X123456785UT074O8122F1204159ZE184226B<<<<<12"
+        ],
+        "fields": {
+          "Format": "Td3",
+          "Document type": "P",
+          "Surname": "TESTER",
+          "Given names": "ANNA MARIA",
+          "Sex": "F",
+          "Date of birth": "1974-08-12",
+          "Nationality": "UTO",
+          "Document number": "X12345678",
+          "Issuing country": "UTO",
+          "Expiration date": "2012-04-15",
+          "Personal number": "ZE184226B"
+        },
+        "checks": {
+          "Document number": "OK",
+          "Date of birth": "OK",
+          "Expiration date": "OK",
+          "Personal number": "OK",
+          "Composite": "OK"
+        },
+        "polygon": [
+          [
+            237.0,
+            2769.0
+          ],
+          [
+            5746.0,
+            2769.0
+          ],
+          [
+            5746.0,
+            3220.0
+          ],
+          [
+            237.0,
+            3220.0
+          ]
+        ],
+        "rotation": 0,
+        "center_crop": false,
+        "recovered": false,
+        "parse_failed": false,
+        "checksum_status": "OK",
+        "normalized_lines": [
+          "P<UTOTESTER<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<<<",
+          "X123456785UTO7408122F1204159ZE184226B<<<<<12"
+        ],
+        "metrics": {
+          "elapsed_seconds": 0.81,
+          "max_rss_kib": 988800
+        }
+      }
+    },
+    "panorama": {
+      "sha256": "d3884558726504c691b33563eeb08e86e4386551b0bb3f45e02b1de70718eabb",
+      "size": [
+        6000,
+        800
+      ],
+      "result": {
+        "exit": 2,
+        "candidate": true,
+        "ocr_lines": [
+          "IZZ0AZADDO00IIM7IWWVD0D0M526GP",
+          "4YN666NNND00000T2X99OAA57PTTTT",
+          "78590T00W00I077500700007LA991I"
+        ],
+        "fields": {},
+        "checks": {},
+        "polygon": [
+          [
+            2702.0,
+            425.0
+          ],
+          [
+            3264.0,
+            537.0
+          ],
+          [
+            3221.0,
+            754.0
+          ],
+          [
+            2659.0,
+            642.0
+          ]
+        ],
+        "rotation": 0,
+        "center_crop": false,
+        "recovered": false,
+        "parse_failed": true,
+        "checksum_status": "NOT VERIFIED",
+        "normalized_lines": [
+          "IZZ0AZADDO00IIM7IWWVD0D0M526GP",
+          "4YN666NNND00000T2X99OAA57PTTTT",
+          "78590T00W00I077500700007LA991I"
+        ],
+        "metrics": {
+          "elapsed_seconds": 3.39,
+          "max_rss_kib": 925972
+        }
+      }
+    },
+    "white": {
+      "sha256": "e90072b4050a2030b13a7a2b73a3c60124bd697e7d17ed352086a9c693a17b8a",
+      "size": [
+        640,
+        480
+      ],
+      "result": {
+        "exit": 2,
+        "candidate": true,
+        "ocr_lines": [
+          "WUVVVV2VVVVVLJJJLLLLLLLJJJVVJJ",
+          "V055J",
+          "LXXVVVV",
+          "NJBBBBB555BB555555555BBNNNNK"
+        ],
+        "fields": {},
+        "checks": {},
+        "polygon": [
+          [
+            637.0,
+            465.0
+          ],
+          [
+            639.0,
+            465.0
+          ],
+          [
+            639.0,
+            502.0
+          ],
+          [
+            637.0,
+            502.0
+          ]
+        ],
+        "rotation": 0,
+        "center_crop": false,
+        "recovered": false,
+        "parse_failed": true,
+        "checksum_status": "NOT VERIFIED",
+        "normalized_lines": [
+          "WUVVVV2VVVVVLJJJLLLLLLLJJJVVJJ",
+          "V055J",
+          "LXXVVVV",
+          "NJBBBBB555BB555555555BBNNNNK"
+        ],
+        "metrics": {
+          "elapsed_seconds": 2.67,
+          "max_rss_kib": 770228
+        }
+      }
+    },
+    "black": {
+      "sha256": "441da7236f6ffdd8fb4cdfa2d9ce7b8d8df8cf2f7a8e82c530714d92266ce613",
+      "size": [
+        640,
+        480
+      ],
+      "result": {
+        "exit": 2,
+        "candidate": true,
+        "ocr_lines": [
+          "555999999999999999999999999999",
+          "99559",
+          "5559555",
+          "5955555595999599990999999999"
+        ],
+        "fields": {},
+        "checks": {},
+        "polygon": [
+          [
+            513.0,
+            -6.0
+          ],
+          [
+            547.0,
+            -39.0
+          ],
+          [
+            574.0,
+            -12.0
+          ],
+          [
+            540.0,
+            22.0
+          ]
+        ],
+        "rotation": 0,
+        "center_crop": false,
+        "recovered": false,
+        "parse_failed": true,
+        "checksum_status": "NOT VERIFIED",
+        "normalized_lines": [
+          "555999999999999999999999999999",
+          "99559",
+          "5559555",
+          "5955555595999599990999999999"
+        ],
+        "metrics": {
+          "elapsed_seconds": 2.65,
+          "max_rss_kib": 768044
+        }
+      }
+    },
+    "solid": {
+      "sha256": "34293560e034069cda888569f7aa5e0ffdc3b81b7f149e3bc85625200c7e692a",
+      "size": [
+        640,
+        480
+      ],
+      "result": {
+        "exit": 2,
+        "candidate": true,
+        "ocr_lines": [
+          "I92T88TTTTT8TTTTT8OTTT8EX9OXX88OOOOS",
+          "B2L3TL3",
+          "8288888888888888882288800008"
+        ],
+        "fields": {},
+        "checks": {},
+        "polygon": [
+          [
+            602.0,
+            473.0
+          ],
+          [
+            606.0,
+            470.0
+          ],
+          [
+            608.0,
+            472.0
+          ],
+          [
+            604.0,
+            476.0
+          ]
+        ],
+        "rotation": 0,
+        "center_crop": false,
+        "recovered": false,
+        "parse_failed": true,
+        "checksum_status": "NOT VERIFIED",
+        "normalized_lines": [
+          "I92T88TTTTT8TTTTT8OTTT8EX9OXX88OOOOS",
+          "B2L3TL3",
+          "8288888888888888882288800008"
+        ],
+        "metrics": {
+          "elapsed_seconds": 2.68,
+          "max_rss_kib": 769200
+        }
+      }
+    },
+    "checksum-failed": {
+      "sha256": "20e56a5596218a7485b7d4d96c173a99538c77a42d32dc6e92754f6a65a6af0a",
+      "size": [
+        869,
+        640
+      ],
+      "result": {
+        "exit": 2,
+        "candidate": true,
+        "ocr_lines": [
+          "P<UT0TESTER<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<<<",
+          "Y123456785UT074O8122F1204159ZE184226B<<<<<12"
+        ],
+        "fields": {
+          "Format": "Td3",
+          "Document type": "P",
+          "Surname": "TESTER",
+          "Given names": "ANNA MARIA",
+          "Sex": "F",
+          "Date of birth": "1974-08-12",
+          "Nationality": "UTO",
+          "Document number": "Y12345678",
+          "Issuing country": "UTO",
+          "Expiration date": "2012-04-15",
+          "Personal number": "ZE184226B"
+        },
+        "checks": {
+          "Document number": "FAILED",
+          "Date of birth": "OK",
+          "Expiration date": "OK",
+          "Personal number": "OK",
+          "Composite": "FAILED"
+        },
+        "polygon": [
+          [
+            35.0,
+            443.0
+          ],
+          [
+            834.0,
+            443.0
+          ],
+          [
+            834.0,
+            516.0
+          ],
+          [
+            35.0,
+            516.0
+          ]
+        ],
+        "rotation": 0,
+        "center_crop": false,
+        "recovered": false,
+        "parse_failed": false,
+        "checksum_status": "FAILED",
+        "normalized_lines": [
+          "P<UTOTESTER<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<<<",
+          "Y123456785UTO7408122F1204159ZE184226B<<<<<12"
+        ],
+        "metrics": {
+          "elapsed_seconds": 2.68,
+          "max_rss_kib": 782384
+        }
+      }
+    },
+    "parse-failed": {
+      "sha256": "8e45c8d9687021625919dc3101328b1a446d72038f23ff9663255dc2abe014dd",
+      "size": [
+        869,
+        640
+      ],
+      "result": {
+        "exit": 2,
+        "candidate": true,
+        "ocr_lines": [
+          "ABCDEFGHIJKLMN0P0RSTUVWXYZ<<<<<<<<<<<<<<<<<<",
+          "ABCDEFGHI0KLMN0P0RSTUVWXYZ<<<<<<<<<<<<<<<<<<"
+        ],
+        "fields": {},
+        "checks": {},
+        "polygon": [
+          [
+            34.0,
+            445.0
+          ],
+          [
+            835.0,
+            445.0
+          ],
+          [
+            835.0,
+            516.0
+          ],
+          [
+            34.0,
+            516.0
+          ]
+        ],
+        "rotation": 0,
+        "center_crop": false,
+        "recovered": false,
+        "parse_failed": true,
+        "checksum_status": "NOT VERIFIED",
+        "normalized_lines": [
+          "ABCDEFGHIJKLMN0P0RSTUVWXYZ<<<<<<<<<<<<<<<<<<",
+          "ABCDEFGHI0KLMN0P0RSTUVWXYZ<<<<<<<<<<<<<<<<<<"
+        ],
+        "metrics": {
+          "elapsed_seconds": 5.6,
+          "max_rss_kib": 780332
+        }
+      }
+    },
+    "docsaid": {
+      "sha256": "c1a672b074a708cede498490eca999dc42ee41a79af5d97b4dff12df725daa74",
+      "size": [
+        2160,
+        3840
+      ],
+      "result": {
+        "exit": 0,
+        "candidate": true,
+        "ocr_lines": [
+          "PCAZEQAQARIN<<FIDAN<<<<<<<<<<<<<<<<<<<<<<<<<",
+          "C946302620AZE6707297F23031072W12IMJ<<<<<<<40"
+        ],
+        "fields": {
+          "Format": "Td3",
+          "Document type": "PC",
+          "Surname": "QAQARIN",
+          "Given names": "FIDAN",
+          "Sex": "F",
+          "Date of birth": "1967-07-29",
+          "Nationality": "AZE",
+          "Document number": "C94630262",
+          "Issuing country": "AZE",
+          "Expiration date": "2023-03-10",
+          "Personal number": "2W12IMJ"
+        },
+        "checks": {
+          "Document number": "OK",
+          "Date of birth": "OK",
+          "Expiration date": "OK",
+          "Personal number": "OK",
+          "Composite": "OK"
+        },
+        "polygon": [
+          [
+            145.0,
+            1910.0
+          ],
+          [
+            1664.0,
+            1969.0
+          ],
+          [
+            1658.0,
+            2118.0
+          ],
+          [
+            139.0,
+            2058.0
+          ]
+        ],
+        "rotation": 0,
+        "center_crop": false,
+        "recovered": false,
+        "parse_failed": false,
+        "checksum_status": "OK",
+        "normalized_lines": [
+          "PCAZEQAQARIN<<FIDAN<<<<<<<<<<<<<<<<<<<<<<<<<",
+          "C946302620AZE6707297F23031072W12IMJ<<<<<<<40"
+        ],
+        "metrics": {
+          "elapsed_seconds": 0.58,
+          "max_rss_kib": 803872
+        }
+      }
+    },
+    "photo": {
+      "sha256": "ffe89a0ab0e94114e10777e7313d7fa83d634e34ebc2ea7479085cffa504c920",
+      "size": [
+        128,
+        128
+      ],
+      "result": {
+        "exit": 2,
+        "candidate": true,
+        "ocr_lines": [
+          "LLPP3LLL0NNN0NNNLLLLLLLBBBBLLBMBBBBL",
+          "LL2MBBB",
+          "777MBWW0TT0005058LBMNB3388B0"
+        ],
+        "fields": {},
+        "checks": {},
+        "polygon": [
+          [
+            82.0,
+            117.0
+          ],
+          [
+            108.0,
+            117.0
+          ],
+          [
+            108.0,
+            124.0
+          ],
+          [
+            82.0,
+            124.0
+          ]
+        ],
+        "rotation": 0,
+        "center_crop": false,
+        "recovered": false,
+        "parse_failed": true,
+        "checksum_status": "NOT VERIFIED",
+        "normalized_lines": [
+          "LLPP3LLL0NNN0NNNLLLLLLLBBBBLLBMBBBBL",
+          "LL2MBBB",
+          "777MBWW0TT0005058LBMNB3388B0"
+        ],
+        "metrics": {
+          "elapsed_seconds": 1.42,
+          "max_rss_kib": 760616
+        }
+      }
+    },
+    "usage-no-argument": {
+      "sha256": null,
+      "size": [
+        0,
+        0
+      ],
+      "result": {
+        "exit": 2,
+        "candidate": false,
+        "ocr_lines": [],
+        "fields": {},
+        "checks": {},
+        "polygon": [],
+        "rotation": 0,
+        "center_crop": false,
+        "recovered": false,
+        "parse_failed": false,
+        "normalized_lines": [],
+        "metrics": {
+          "elapsed_seconds": 0.0,
+          "max_rss_kib": 8576
+        }
+      }
+    },
+    "usage-unknown-flag": {
+      "sha256": null,
+      "size": [
+        0,
+        0
+      ],
+      "result": {
+        "exit": 2,
+        "candidate": false,
+        "ocr_lines": [],
+        "fields": {},
+        "checks": {},
+        "polygon": [],
+        "rotation": 0,
+        "center_crop": false,
+        "recovered": false,
+        "parse_failed": false,
+        "normalized_lines": [],
+        "metrics": {
+          "elapsed_seconds": 0.0,
+          "max_rss_kib": 8576
+        }
+      }
+    },
+    "usage-nonnumeric-threads": {
+      "sha256": null,
+      "size": [
+        0,
+        0
+      ],
+      "result": {
+        "exit": 2,
+        "candidate": false,
+        "ocr_lines": [],
+        "fields": {},
+        "checks": {},
+        "polygon": [],
+        "rotation": 0,
+        "center_crop": false,
+        "recovered": false,
+        "parse_failed": false,
+        "normalized_lines": [],
+        "metrics": {
+          "elapsed_seconds": 0.0,
+          "max_rss_kib": 8448
+        }
+      }
+    }
+  }
+}
