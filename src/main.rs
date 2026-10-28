@@ -1,13 +1,14 @@
 mod image_processing;
 mod scanner;
 
+use std::cmp::Ordering;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
 use anyhow::{Context, Result, bail};
 use clap::Parser;
 use image::{RgbImage, imageops};
-use mrz::{Format, MrzData};
+use mrz::MrzData;
 use scanner::{MrzScanner, ScanResult};
 
 #[derive(Parser, Debug)]
@@ -44,7 +45,11 @@ struct Candidate {
 }
 
 fn main() -> ExitCode {
-    match run() {
+    exit_code(run())
+}
+
+fn exit_code(result: Result<bool>) -> ExitCode {
+    match result {
         Ok(true) => ExitCode::SUCCESS,
         Ok(false) => ExitCode::from(2),
         Err(error) => {
@@ -65,50 +70,62 @@ fn run() -> Result<bool> {
         .to_rgb8();
     let mut scanner = MrzScanner::new(&args.models_dir, args.threads)?;
 
+    let candidate =
+        run_attempts(
+            &image,
+            args.no_rotate,
+            |oriented, rotation, center_crop| match &args.debug_dir {
+                Some(dir) => {
+                    let mode = if center_crop { "crop" } else { "full" };
+                    scanner.scan_with_debug(oriented, dir, &format!("{mode}-{rotation}"))
+                }
+                None => scanner.scan(oriented),
+            },
+        )
+        .with_context(|| format!("no readable MRZ found in {}", args.image.display()))?;
+
+    print_result(&candidate)
+}
+
+// Keep orchestration independent of ONNX so stop/selection rules can be tested
+// using prepared scan results. The order is full, then crop, each at 0/90/180/270°.
+fn run_attempts(
+    image: &RgbImage,
+    no_rotate: bool,
+    mut scan: impl FnMut(&RgbImage, u32, bool) -> Result<ScanResult>,
+) -> Result<Candidate> {
     let mut best: Option<Candidate> = None;
     let mut errors = Vec::new();
-    let rotations: &[u32] = if args.no_rotate {
-        &[0]
-    } else {
-        &[0, 90, 180, 270]
-    };
-    'attempts: for center_crop in [false, true] {
+    let rotations: &[u32] = if no_rotate { &[0] } else { &[0, 90, 180, 270] };
+    for center_crop in [false, true] {
         if center_crop && image.width() == image.height() {
             continue;
         }
         let input = if center_crop {
-            center_square(&image)
+            center_square(image)
         } else {
             image.clone()
         };
         for &rotation in rotations {
             let oriented = rotate(&input, rotation);
-            let result = match &args.debug_dir {
-                Some(dir) => {
-                    let mode = if center_crop { "crop" } else { "full" };
-                    scanner.scan_with_debug(&oriented, dir, &format!("{mode}-{rotation}"))
-                }
-                None => scanner.scan(&oriented),
-            };
-            match result {
+            match scan(&oriented, rotation, center_crop) {
                 Ok(result) => {
-                    let is_valid_td3 = result
-                        .parsed
-                        .as_ref()
-                        .is_ok_and(|data| data.format == Format::Td3 && data.checksum_consistent());
+                    let candidate_score = score(&result);
                     let candidate = Candidate {
                         rotation,
                         center_crop,
                         result,
                     };
-                    let replace = best
-                        .as_ref()
-                        .is_none_or(|current| score(&candidate.result) > score(&current.result));
+                    // A clean checksum-valid result is maximal, regardless of format.
+                    // Recovered results remain eligible but never stop the search.
+                    if candidate_score.quality == Quality::CleanValid {
+                        return Ok(candidate);
+                    }
+                    let replace = best.as_ref().is_none_or(|current| {
+                        candidate_score.cmp(&score(&current.result)) == Ordering::Greater
+                    });
                     if replace {
                         best = Some(candidate);
-                    }
-                    if is_valid_td3 {
-                        break 'attempts;
                     }
                 }
                 Err(error) => errors.push(format!(
@@ -118,40 +135,59 @@ fn run() -> Result<bool> {
         }
     }
 
-    let Some(candidate) = best else {
-        bail!(
-            "no readable MRZ found in {}. Attempts: {}",
-            args.image.display(),
-            errors.join("; ")
-        );
-    };
-
-    print_result(&candidate)
+    best.with_context(|| format!("no readable MRZ found. Attempts: {}", errors.join("; ")))
 }
 
-fn score(result: &ScanResult) -> u32 {
+// Declaration order is the primary, format-neutral ranking.
+#[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+enum Quality {
+    Unparseable,
+    ChecksumFailed,
+    RecoveredValid,
+    CleanValid,
+}
+
+struct Score {
+    quality: Quality,
+    verified: u8,
+    applicable: u8,
+}
+
+impl Score {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.quality.cmp(&other.quality).then_with(|| {
+            if self.quality != Quality::ChecksumFailed {
+                return Ordering::Equal;
+            }
+            // Compare exact fractions without floating-point rounding. No
+            // applicable checks means no evidence: treat it as 0/1, not valid.
+            let left = u16::from(self.verified) * u16::from(other.applicable.max(1));
+            let right = u16::from(other.verified) * u16::from(self.applicable.max(1));
+            left.cmp(&right)
+        })
+    }
+}
+
+fn score(result: &ScanResult) -> Score {
     match &result.parsed {
-        Ok(data) => {
-            let verified = [
-                data.checks.document_number,
-                data.checks.date_of_birth,
-                data.checks.date_of_expiry,
-                data.checks.personal_number,
-                data.checks.composite,
-            ]
-            .into_iter()
-            .flatten()
-            .filter(|valid| *valid)
-            .count() as u32;
-            100 + verified * 20
-                + if data.format == Format::Td3 { 10 } else { 0 }
-                + if data.checksum_consistent() { 200 } else { 0 }
-                + if data.damaged_recovery { 0 } else { 5 }
-        }
-        // All these regions passed detection geometry checks. Without calibrated
-        // quality metrics, retain the first plausible candidate rather than the
-        // longest garbage OCR (the attempt loop replaces only on a higher score).
-        Err(_) => 0,
+        Ok(data) => Score {
+            quality: if !data.checksum_consistent() {
+                Quality::ChecksumFailed
+            } else if data.damaged_recovery {
+                Quality::RecoveredValid
+            } else {
+                Quality::CleanValid
+            },
+            verified: data.checks.verified(),
+            applicable: data.checks.applicable(),
+        },
+        // Without calibrated quality metrics, retain the first plausible
+        // region, not the longest garbage OCR. All ties keep the first attempt.
+        Err(_) => Score {
+            quality: Quality::Unparseable,
+            verified: 0,
+            applicable: 0,
+        },
     }
 }
 
@@ -254,31 +290,5 @@ fn rotate(image: &RgbImage, degrees: u32) -> RgbImage {
 }
 
 #[cfg(test)]
-mod tests {
-    #[test]
-    fn unparsed_fallback_keeps_first_candidate_regardless_of_ocr_length() {
-        use super::*;
-        let make_result = |text: &str| ScanResult {
-            ocr_lines: vec![text.to_owned()],
-            parsed: mrz::find_and_parse(text),
-            polygon: [imageproc::point::Point::new(0.0, 0.0); 4],
-        };
-        let first = make_result("ABC");
-        let later = make_result(&"GARBAGE".repeat(100));
-        assert!(first.parsed.is_err() && later.parsed.is_err());
-        assert_eq!(score(&first), score(&later));
-    }
-
-    #[test]
-    fn parses_icao_specimen() {
-        let data = mrz::parse_td3(
-            "P<UTOERIKSSON<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<",
-            "L898902C36UTO7408122F1204159ZE184226B<<<<<10",
-        )
-        .unwrap();
-        assert!(data.checksum_consistent());
-        assert_eq!(data.surname, "ERIKSSON");
-        assert_eq!(data.given_names, "ANNA MARIA");
-        assert_eq!(data.full_document_number(), "L898902C3");
-    }
-}
+#[path = "attempt_tests.rs"]
+mod tests;

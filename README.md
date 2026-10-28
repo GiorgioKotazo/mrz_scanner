@@ -9,7 +9,7 @@ A local Rust CLI for extracting data from the machine-readable zone (MRZ) of pas
 - Automatic rotations of 0/90/180/270 degrees and fallback with center cropping.
 - Parsing of TD1/TD2/TD3/MRV-A/MRV-B and check digit validation using `mrz`.
 - Output of the raw MRZ, structured fields, and the result of each check.
-- Stops at the first checksum-valid TD3; on failure, the best candidate is selected.
+- Stops at the first clean checksum-valid result in any supported format; otherwise selects the best candidate.
 
 ## Building
 
@@ -46,6 +46,33 @@ Exit codes:
 - `1` — the model, image, or MRZ could not be processed.
 
 With exit code `2`, the data must not be considered verified: another photo or manual verification is required.
+
+### Attempt strategy and candidate selection
+
+Attempts run on the full image at 0/90/180/270 degrees, then on its center square
+crop in the same order. A square image does not need the crop pass; `--no-rotate`
+limits each pass to 0 degrees. For TD1, TD2, TD3, MRV-A, and MRV-B alike, scanning
+stops as soon as all applicable checks pass **without damaged recovery**
+(`checksum_consistent && !damaged_recovery`).
+
+A checksum-valid result obtained with checksum-guided OCR repair is kept, but
+scanning continues to look for a clean result. Candidates are ranked in this order:
+
+1. Clean checksum-valid result.
+2. Recovered checksum-valid result.
+3. Parseable result with failed checks, ranked by the fraction of successful checks
+   among applicable checks (`N/A` checks are excluded).
+4. Unparseable OCR from a plausible detected region.
+
+No format has a ranking bonus. Ties retain the first candidate in attempt order;
+unparseable OCR is not ranked by text length. An error in a later attempt does not
+discard a candidate already found. If no attempt finds a plausible region, the
+exit code is `1`.
+
+If no clean checksum-valid result is found, a recovered checksum-valid result can
+still be selected. It retains exit code `0` because all applicable check digits
+match, and the output includes `Recovery: checksum-guided OCR repair was applied`.
+This indicates repaired OCR, not confirmation of document authenticity.
 
 ## Debugging
 
