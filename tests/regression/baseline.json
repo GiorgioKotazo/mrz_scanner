@@ -41,8 +41,7 @@
           "Nationality": "UTO",
           "Document number": "X12345678",
           "Issuing country": "UTO",
-          "Expiration date": "2012-04-15",
-          "Personal number": ""
+          "Expiration date": "2012-04-15"
         },
         "checks": {
           "Document number": "OK",
@@ -108,8 +107,7 @@
           "Nationality": "UTO",
           "Document number": "X12345678",
           "Issuing country": "UTO",
-          "Expiration date": "2012-04-15",
-          "Personal number": ""
+          "Expiration date": "2012-04-15"
         },
         "checks": {
           "Document number": "OK",
@@ -241,7 +239,7 @@
           "Document number": "X12345678",
           "Issuing country": "UTO",
           "Expiration date": "2012-04-15",
-          "Personal number": ""
+          "Optional data 1": "VISATEST"
         },
         "checks": {
           "Document number": "OK",
@@ -306,8 +304,7 @@
           "Nationality": "UTO",
           "Document number": "X12345678",
           "Issuing country": "UTO",
-          "Expiration date": "2012-04-15",
-          "Personal number": ""
+          "Expiration date": "2012-04-15"
         },
         "checks": {
           "Document number": "OK",
@@ -1192,7 +1189,7 @@
         0
       ],
       "result": {
-        "exit": 2,
+        "exit": 1,
         "candidate": false,
         "ocr_lines": [],
         "fields": {},
@@ -1216,7 +1213,7 @@
         0
       ],
       "result": {
-        "exit": 2,
+        "exit": 1,
         "candidate": false,
         "ocr_lines": [],
         "fields": {},
@@ -1240,7 +1237,7 @@
         0
       ],
       "result": {
-        "exit": 2,
+        "exit": 1,
         "candidate": false,
         "ocr_lines": [],
         "fields": {},

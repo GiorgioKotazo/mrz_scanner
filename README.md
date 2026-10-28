@@ -6,6 +6,10 @@ A local Rust CLI for extracting data from the machine-readable zone (MRZ) of pas
 
 - DOCSAID ONNX detection and recognition models via ONNX Runtime (`ort`).
 - OpenCV-compatible preprocessing, MRZ detection, and perspective correction in Rust.
+- Bounded detection buffers: direct 256×256 letterbox input and heatmap/contour
+  postprocessing capped at 1536×1536, without a full-resolution padded square.
+  Decoded images, crops, rotations, and rectified MRZ buffers still use memory
+  proportional to their dimensions.
 - Automatic rotations of 0/90/180/270 degrees and fallback with center cropping.
 - Parsing of TD1/TD2/TD3/MRV-A/MRV-B and check digit validation using `mrz`.
 - Output of the raw MRZ, structured fields, and the result of each check.
@@ -38,14 +42,38 @@ By default, models are loaded from `./models`. To specify a different directory 
 ```
 
 JPEG and PNG are supported. The `--no-rotate` flag disables automatic rotations; center cropping may still be used as a fallback. For maximum accuracy, it is best to run the program without this flag.
+`--threads` must be an integer greater than zero (default: `2`).
+Use `--help` for usage or `--version` for the application version; neither requires
+an image or model files.
 
 Exit codes:
 
-- `0` — the MRZ was parsed and all applicable check digits matched;
-- `2` — a candidate was obtained, but parsing or at least one check digit failed;
-- `1` — the model, image, or MRZ could not be processed.
+- `0` — the MRZ was parsed and all applicable check digits matched, or `--help`/`--version` was requested;
+- `2` — a plausible MRZ candidate was obtained, but parsing or checksum verification failed;
+- `1` — invalid command-line arguments, a model/image processing error, or no acceptable MRZ region found.
+
+Usage errors are reported on stderr without an MRZ candidate; help and version
+are written to stdout. Code `2` is reserved for unverified scan results, not CLI errors.
 
 With exit code `2`, the data must not be considered verified: another photo or manual verification is required.
+
+### Document fields
+
+The output contains raw OCR lines, the MRZ quadrangle, and, when parsing succeeds,
+`Document data` and `Check digits` sections. Document fields include format, type,
+surname, given names, sex, birth date, nationality, full `Document number`, issuing
+country, and expiration date.
+
+Nonempty optional fields are also printed:
+
+- `Optional data 1` (`optional_data_1`) for TD1, TD2, MRV-A, and MRV-B;
+- `Optional data 2` (`optional_data_2`) for TD1;
+- `Personal number` for TD3's `optional_data_1`, without duplicating the same value
+  as `Optional data 1`.
+
+Absent or empty optional fields are omitted. Non-applicable check digits remain
+`N/A`. The document-number check is labelled `Document number` for every format.
+If parsing fails, the raw OCR and `Checksum status: NOT VERIFIED` are still shown.
 
 ### Attempt strategy and candidate selection
 
@@ -101,9 +129,18 @@ The detection model input, heatmap, binarization, and aligned MRZ are saved. **T
 ## Tests
 
 ```bash
-cargo test
+cargo fmt --all -- --check
+cargo test --all-targets
 cargo clippy --all-targets -- -D warnings
+
+# Explicit model tests, including CLI scan exit codes (requires both ONNX files):
+cargo test --release -- --ignored --test-threads=1
 ```
+
+The default tests include CLI usage/help/version, missing models, image decoding
+errors, prepared scan outcomes, and document-field formatting without model files.
+See [the regression suite](tests/regression/README.md) for public image fixtures
+and full black-box model regression commands.
 
 ## Models
 

@@ -125,8 +125,13 @@ def baseline_in_original_pixels(expected, size, space):
 
 def baseline_errors(actual, expected, size):
     errors = []
-    for key in expected:
-        if key not in ('polygon', 'metrics') and actual.get(key) != expected[key]:
+    for key, value in expected.items():
+        if key == 'fields':
+            # Step 5 omits empty optional fields. Keep historical private
+            # baselines intact, and never discard a nonempty personal number.
+            value = {label: field for label, field in value.items()
+                     if (label, field) != ('Personal number', '')}
+        if key not in ('polygon', 'metrics') and actual.get(key) != value:
             errors.append(f'{key} changed')
     # Unordered corners, tolerance in original-file pixels.
     a, b = actual['polygon'], expected['polygon']

@@ -3,11 +3,12 @@ mod scanner;
 
 use std::borrow::Cow;
 use std::cmp::Ordering;
+use std::io::{self, Write};
 use std::path::PathBuf;
 use std::process::ExitCode;
 
 use anyhow::{Context, Result, bail};
-use clap::Parser;
+use clap::{Parser, error::ErrorKind};
 use image::{RgbImage, imageops};
 use imageproc::point::Point;
 use mrz::MrzData;
@@ -16,11 +17,11 @@ use scanner::{MrzScanner, ScanResult};
 #[derive(Parser, Debug)]
 #[command(
     name = "mrz_scanner",
-    about = "Read passport MRZ data locally with DOCSAID ONNX models",
+    about = "Read document MRZ data locally with DOCSAID ONNX models",
     version
 )]
 struct Args {
-    /// Path to a JPEG or PNG passport photo.
+    /// Path to a JPEG or PNG photo of an ICAO document.
     image: PathBuf,
 
     /// Directory containing the detection and recognition ONNX models.
@@ -78,7 +79,22 @@ impl AttemptTransform {
 }
 
 fn main() -> ExitCode {
-    exit_code(run())
+    match Args::try_parse() {
+        Ok(args) => exit_code(run(args)),
+        Err(error) => {
+            let informational = matches!(
+                error.kind(),
+                ErrorKind::DisplayHelp | ErrorKind::DisplayVersion
+            );
+            // Preserve clap's diagnostics and stdout/stderr selection, but not
+            // its default usage-error code (2 is reserved for MRZ candidates).
+            if error.print().is_err() || !informational {
+                ExitCode::FAILURE
+            } else {
+                ExitCode::SUCCESS
+            }
+        }
+    }
 }
 
 fn exit_code(result: Result<bool>) -> ExitCode {
@@ -92,8 +108,7 @@ fn exit_code(result: Result<bool>) -> ExitCode {
     }
 }
 
-fn run() -> Result<bool> {
-    let args = Args::parse();
+fn run(args: Args) -> Result<bool> {
     if args.threads == 0 {
         bail!("--threads must be greater than zero");
     }
@@ -262,7 +277,7 @@ fn print_result(candidate: &Candidate) -> Result<bool> {
                 println!("\nMRZ after checksum-guided normalization/repair:");
                 println!("{}", data.mrz_lines);
             }
-            print_data(data);
+            write_data(&mut io::stdout().lock(), data)?;
             let valid = data.checksum_consistent();
             if valid {
                 println!("Checksum status: OK");
@@ -279,31 +294,61 @@ fn print_result(candidate: &Candidate) -> Result<bool> {
     }
 }
 
-fn print_data(data: &MrzData) {
-    println!("\nPassport data:");
-    println!("  Format:           {:?}", data.format);
-    println!("  Document type:    {}", data.document_type);
-    println!("  Surname:          {}", data.surname);
-    println!("  Given names:      {}", data.given_names);
-    println!("  Sex:              {}", data.sex);
-    println!("  Date of birth:    {}", data.date_of_birth);
-    println!("  Nationality:      {}", data.nationality);
-    println!("  Passport number:  {}", data.full_document_number());
-    println!("  Issuing country:  {}", data.issuing_country);
-    println!("  Expiration date:  {}", data.date_of_expiry);
-    println!(
-        "  Personal number:  {}",
-        data.personal_number().unwrap_or("")
-    );
-    println!("\nCheck digits:");
-    println!("  Passport number:  {}", check(data.checks.document_number));
-    println!("  Date of birth:    {}", check(data.checks.date_of_birth));
-    println!("  Expiration date:  {}", check(data.checks.date_of_expiry));
-    println!("  Personal number:  {}", check(data.checks.personal_number));
-    println!("  Composite:        {}", check(data.checks.composite));
-    if data.damaged_recovery {
-        println!("  Recovery:         checksum-guided OCR repair was applied");
+fn write_data(out: &mut impl Write, data: &MrzData) -> io::Result<()> {
+    writeln!(out, "\nDocument data:")?;
+    writeln!(out, "  Format:           {:?}", data.format)?;
+    writeln!(out, "  Document type:    {}", data.document_type)?;
+    writeln!(out, "  Surname:          {}", data.surname)?;
+    writeln!(out, "  Given names:      {}", data.given_names)?;
+    writeln!(out, "  Sex:              {}", data.sex)?;
+    writeln!(out, "  Date of birth:    {}", data.date_of_birth)?;
+    writeln!(out, "  Nationality:      {}", data.nationality)?;
+    writeln!(out, "  Document number:  {}", data.full_document_number())?;
+    writeln!(out, "  Issuing country:  {}", data.issuing_country)?;
+    writeln!(out, "  Expiration date:  {}", data.date_of_expiry)?;
+    // TD3's primary optional slot is its personal number; do not duplicate it.
+    let primary_label = if data.format == mrz::Format::Td3 {
+        "Personal number"
+    } else {
+        "Optional data 1"
+    };
+    for (label, value) in [
+        (primary_label, data.optional_data_1.as_deref()),
+        ("Optional data 2", data.optional_data_2.as_deref()),
+    ] {
+        if let Some(value) = value.filter(|value| !value.is_empty()) {
+            writeln!(out, "  {label}:  {value}")?;
+        }
     }
+    writeln!(out, "\nCheck digits:")?;
+    writeln!(
+        out,
+        "  Document number:  {}",
+        check(data.checks.document_number)
+    )?;
+    writeln!(
+        out,
+        "  Date of birth:    {}",
+        check(data.checks.date_of_birth)
+    )?;
+    writeln!(
+        out,
+        "  Expiration date:  {}",
+        check(data.checks.date_of_expiry)
+    )?;
+    writeln!(
+        out,
+        "  Personal number:  {}",
+        check(data.checks.personal_number)
+    )?;
+    writeln!(out, "  Composite:        {}", check(data.checks.composite))?;
+    if data.damaged_recovery {
+        writeln!(
+            out,
+            "  Recovery:         checksum-guided OCR repair was applied"
+        )?;
+    }
+    Ok(())
 }
 
 fn check(value: Option<bool>) -> &'static str {

@@ -85,6 +85,18 @@ class RunnerTests(unittest.TestCase):
             actual[key] = {} if isinstance(actual[key], dict) else []
             self.assertIn(f'{key} changed', baseline_errors(actual, expected, [640, 480]))
 
+    def test_legacy_empty_personal_number_can_be_omitted(self):
+        expected = extract(VALID, 0)
+        actual = copy.deepcopy(expected)
+        expected['fields']['Personal number'] = ''
+        saved = copy.deepcopy(expected)
+        self.assertEqual([], baseline_errors(actual, expected, [640, 480]))
+        self.assertEqual(expected, saved)
+        expected['fields']['Personal number'] = 'SYNTHETIC123'
+        self.assertIn('fields changed', baseline_errors(actual, expected, [640, 480]))
+        actual['fields']['Personal number'] = 'SYNTHETIC123'
+        self.assertEqual([], baseline_errors(actual, expected, [640, 480]))
+
     def test_polygon_tolerance_and_corner_order(self):
         expected = extract(VALID, 0)
         actual = copy.deepcopy(expected)

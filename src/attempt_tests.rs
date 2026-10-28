@@ -77,6 +77,57 @@ fn attempts(results: Vec<Result<ScanResult>>) -> (Result<Candidate>, Vec<(bool, 
     (candidate, calls)
 }
 
+fn formatted_data(data: &MrzData) -> String {
+    let mut output = Vec::new();
+    write_data(&mut output, data).unwrap();
+    String::from_utf8(output).unwrap()
+}
+
+#[test]
+fn document_output_is_format_neutral_and_preserves_optional_slots() {
+    for format in FORMATS {
+        let mut data = valid(format, false).parsed.unwrap();
+        // Prepared parsed fields isolate formatting from parser/OCR behavior.
+        data.optional_data_1 = Some("PRIMARY123".into());
+        data.optional_data_2 = (format == Format::Td1).then(|| "SECOND456".into());
+        let text = formatted_data(&data);
+        let (fields, checks) = text.split_once("\nCheck digits:").unwrap();
+        assert!(fields.contains("Document data:"), "{format:?}");
+        assert!(fields.contains("Document number:  X12345678"));
+        assert!(checks.contains("Document number:  OK"));
+        assert!(!text.contains("Passport"));
+        if format == Format::Td3 {
+            assert!(fields.contains("Personal number:  PRIMARY123"));
+            assert!(!fields.contains("Optional data 1:"));
+        } else {
+            assert!(fields.contains("Optional data 1:  PRIMARY123"));
+            assert!(!fields.contains("Personal number:"));
+            assert!(checks.contains("Personal number:  N/A"));
+        }
+        assert_eq!(
+            fields.contains("Optional data 2:  SECOND456"),
+            format == Format::Td1
+        );
+        assert!(!text.contains("Recovery:"));
+    }
+}
+
+#[test]
+fn empty_optional_fields_are_omitted_and_recovery_is_visible() {
+    for format in FORMATS {
+        for empty in [None, Some(String::new())] {
+            let mut data = valid(format, true).parsed.unwrap();
+            data.optional_data_1 = empty.clone();
+            data.optional_data_2 = empty;
+            let text = formatted_data(&data);
+            let fields = text.split_once("\nCheck digits:").unwrap().0;
+            assert!(!fields.contains("Optional data"));
+            assert!(!fields.contains("Personal number:"));
+            assert!(text.contains("Recovery:         checksum-guided OCR repair was applied"));
+        }
+    }
+}
+
 #[test]
 fn clean_valid_stops_immediately_for_every_format() {
     for format in FORMATS {
