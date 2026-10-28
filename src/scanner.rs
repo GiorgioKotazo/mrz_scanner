@@ -27,6 +27,8 @@ pub struct MrzScanner {
 pub struct ScanResult {
     pub ocr_lines: Vec<String>,
     pub parsed: Result<MrzData, mrz::MrzError>,
+    /// Pixel-center coordinates in the image passed to scan (letterbox undone).
+    /// run_attempts maps these to original-file pixels before storing a Candidate.
     pub polygon: [Point<f32>; 4],
 }
 

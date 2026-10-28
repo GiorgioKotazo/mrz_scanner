@@ -74,6 +74,22 @@ still be selected. It retains exit code `0` because all applicable check digits
 match, and the output includes `Recovery: checksum-guided OCR repair was applied`.
 This indicates repaired OCR, not confirmation of document authenticity.
 
+### Polygon coordinates
+
+`MRZ quadrangle: [...] (original image pixels)` always refers to the original
+image decoded from the input file, including when rotation or center cropping
+was used. Coordinates are `(x, y)` in pixels: the top-left pixel center is `(0, 0)`,
+with x increasing to the right and y downwards. The quadrangle can be drawn
+directly on the original image without applying the reported rotation/crop.
+Corners retain their cyclic order, but the first corner need not be the original
+image's top-left corner. Fractional coordinates are preserved; detected corners
+are not clipped to the image bounds.
+
+Attempts crop before rotating clockwise. Detection letterboxing is undone inside
+the scanner; then the inverse rotation and crop offset map the result back to the
+original file. Full/0° borrows the original RGB buffer, crop/0° borrows one crop
+buffer, and nonzero rotations allocate only their rotated buffer.
+
 ## Debugging
 
 ```bash

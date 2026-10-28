@@ -3,7 +3,7 @@ import copy
 import json
 import unittest
 
-from run import ROOT, baseline_errors, contract_errors, extract
+from run import ROOT, baseline_errors, baseline_in_original_pixels, contract_errors, extract
 
 
 VALID = '''MRZ (OCR):
@@ -36,6 +36,28 @@ class RunnerTests(unittest.TestCase):
         self.assertEqual(len(actual['polygon']), 4)
         self.assertEqual(actual, extract(VALID.replace('Passport', 'Document'), 0))
         self.assertEqual([], contract_errors({'id': 'valid', 'category': 'valid'}, actual))
+
+    def test_original_pixel_label_is_parsed(self):
+        labelled = VALID.replace(')]\n', ')] (original image pixels)\n')
+        self.assertNotEqual(labelled, VALID)
+        self.assertEqual(extract(VALID, 0), extract(labelled, 0))
+
+    def test_historical_polygons_are_converted_without_changing_other_data(self):
+        for size, crop, expected_points in [
+            ([8, 5], False, [[1, 2], [2, 3], [6, 2], [5, 1]]),
+            ([8, 5], True, [[2, 2], [3, 3], [4, 2], [3, 1]]),
+            ([5, 10], True, [[1, 4], [2, 5], [3, 4], [2, 3]]),
+        ]:
+            for rotation, point in zip([0, 90, 180, 270], expected_points):
+                old = extract(VALID, 0)
+                old.update(polygon=[[1, 2]], rotation=rotation, center_crop=crop)
+                saved = copy.deepcopy(old)
+                converted = baseline_in_original_pixels(old, size, 'attempt')
+                self.assertEqual(converted, {**old, 'polygon': [point]})
+                self.assertEqual(old, saved)
+                self.assertIs(baseline_in_original_pixels(converted, size, 'original'), converted)
+        with self.assertRaises(ValueError):
+            baseline_in_original_pixels(old, size, 'unknown')
 
     def test_usage_error_is_not_a_candidate(self):
         actual = extract('', 2)

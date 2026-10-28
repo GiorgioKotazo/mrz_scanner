@@ -99,13 +99,36 @@ def contract_errors(case, actual):
     return errors
 
 
+def baseline_in_original_pixels(expected, size, space):
+    """Migrate historical attempt-space geometry without re-recording OCR baselines."""
+    if space == 'original':
+        return expected
+    if space != 'attempt':
+        raise ValueError(f'unknown polygon coordinate space: {space}')
+    width, height = size
+    dx = dy = 0
+    if expected['center_crop']:
+        side = min(width, height)
+        dx, dy = (width - side) // 2, (height - side) // 2
+        width = height = side
+    polygon = []
+    for x, y in expected['polygon']:
+        x, y = {
+            0: (x, y),
+            90: (y, height - 1 - x),
+            180: (width - 1 - x, height - 1 - y),
+            270: (width - 1 - y, x),
+        }[expected['rotation']]
+        polygon.append([x + dx, y + dy])
+    return {**expected, 'polygon': polygon}
+
+
 def baseline_errors(actual, expected, size):
     errors = []
     for key in expected:
         if key not in ('polygon', 'metrics') and actual.get(key) != expected[key]:
             errors.append(f'{key} changed')
-    # Unordered corners, tolerance in pixels, in the CURRENT oriented/cropped frame.
-    # Not an assertion of original-file coordinates (that is plan step 4).
+    # Unordered corners, tolerance in original-file pixels.
     a, b = actual['polygon'], expected['polygon']
     tolerance = max(3.0, 0.02 * max(size))
     if len(a) != len(b) or any(not math.isfinite(v) for p in a for v in p):
@@ -148,7 +171,8 @@ def main():
         parser.error('--record requires the complete suite (--include-slow for public cases)')
     baseline = {} if args.record else json.loads(baseline_path.read_text())
     known = json.loads((ROOT / 'known-failures.json').read_text()) if not args.private else {}
-    report = dict(environment=dict(platform=platform.platform(), python=platform.python_version(),
+    report = dict(polygon_space='original',
+                  environment=dict(platform=platform.platform(), python=platform.python_version(),
                                   threads=args.threads, binary_sha256=sha256(args.binary),
                                   source_sha256={str(path.relative_to(PROJECT)): sha256(path)
                                                  for path in [*sorted((PROJECT / 'src').glob('*.rs')),
@@ -182,7 +206,10 @@ def main():
             previous = baseline['cases'][name]
             if previous['sha256'] != case.get('sha256'):
                 differences.append('fixture differs from baseline')
-            differences += baseline_errors(actual, previous['result'], case.get('size', [0, 0]))
+            size = case.get('size', [0, 0])
+            expected = baseline_in_original_pixels(previous['result'], size,
+                                                   baseline.get('polygon_space', 'attempt'))
+            differences += baseline_errors(actual, expected, size)
         if differences or (violations and (args.strict_contracts or name not in known)):
             status = 'FAIL'
             failures += 1

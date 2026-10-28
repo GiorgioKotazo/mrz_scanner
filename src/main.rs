@@ -1,6 +1,7 @@
 mod image_processing;
 mod scanner;
 
+use std::borrow::Cow;
 use std::cmp::Ordering;
 use std::path::PathBuf;
 use std::process::ExitCode;
@@ -8,6 +9,7 @@ use std::process::ExitCode;
 use anyhow::{Context, Result, bail};
 use clap::Parser;
 use image::{RgbImage, imageops};
+use imageproc::point::Point;
 use mrz::MrzData;
 use scanner::{MrzScanner, ScanResult};
 
@@ -41,7 +43,38 @@ struct Args {
 struct Candidate {
     rotation: u32,
     center_crop: bool,
+    // Unlike the scanner's result, this polygon is in original-file pixels.
     result: ScanResult,
+}
+
+/// The pipeline crops first, then rotates clockwise. The scanner undoes its
+/// own detection letterbox; this transform undoes the remaining attempt steps.
+#[derive(Clone, Copy, Debug)]
+struct AttemptTransform {
+    rotation: u32,
+    crop_offset: (u32, u32),
+    // Dimensions before rotation (after the optional crop).
+    input_size: (u32, u32),
+}
+
+impl AttemptTransform {
+    fn to_original(self, polygon: [Point<f32>; 4]) -> [Point<f32>; 4] {
+        // Integer coordinates denote pixel centers, hence width/height - 1.
+        let max_x = self.input_size.0 as f32 - 1.0;
+        let max_y = self.input_size.1 as f32 - 1.0;
+        polygon.map(|point| {
+            let (x, y) = match self.rotation {
+                0 => (point.x, point.y),
+                90 => (point.y, max_y - point.x),
+                180 => (max_x - point.x, max_y - point.y),
+                270 => (max_x - point.y, point.x),
+                _ => unreachable!(),
+            };
+            // Reverse rotation BEFORE adding the offset: crop precedes rotation.
+            // Preserve corner order and fractional/out-of-frame coordinates.
+            Point::new(x + self.crop_offset.0 as f32, y + self.crop_offset.1 as f32)
+        })
+    }
 }
 
 fn main() -> ExitCode {
@@ -101,15 +134,24 @@ fn run_attempts(
         if center_crop && image.width() == image.height() {
             continue;
         }
-        let input = if center_crop {
-            center_square(image)
+        let (input, crop_offset) = if center_crop {
+            (
+                Cow::Owned(center_square(image)),
+                center_square_offset(image),
+            )
         } else {
-            image.clone()
+            (Cow::Borrowed(image), (0, 0))
         };
         for &rotation in rotations {
+            let transform = AttemptTransform {
+                rotation,
+                crop_offset,
+                input_size: input.dimensions(),
+            };
             let oriented = rotate(&input, rotation);
             match scan(&oriented, rotation, center_crop) {
-                Ok(result) => {
+                Ok(mut result) => {
+                    result.polygon = transform.to_original(result.polygon);
                     let candidate_score = score(&result);
                     let candidate = Candidate {
                         rotation,
@@ -204,7 +246,7 @@ fn print_result(candidate: &Candidate) -> Result<bool> {
         println!("Center crop applied: yes");
     }
     println!(
-        "MRZ quadrangle: [{}]",
+        "MRZ quadrangle: [{}] (original image pixels)",
         result
             .polygon
             .iter()
@@ -272,19 +314,23 @@ fn check(value: Option<bool>) -> &'static str {
     }
 }
 
+fn center_square_offset(image: &RgbImage) -> (u32, u32) {
+    let side = image.width().min(image.height());
+    ((image.width() - side) / 2, (image.height() - side) / 2)
+}
+
 fn center_square(image: &RgbImage) -> RgbImage {
     let side = image.width().min(image.height());
-    let x = (image.width() - side) / 2;
-    let y = (image.height() - side) / 2;
+    let (x, y) = center_square_offset(image);
     imageops::crop_imm(image, x, y, side, side).to_image()
 }
 
-fn rotate(image: &RgbImage, degrees: u32) -> RgbImage {
+fn rotate(image: &RgbImage, degrees: u32) -> Cow<'_, RgbImage> {
     match degrees {
-        0 => image.clone(),
-        90 => imageops::rotate90(image),
-        180 => imageops::rotate180(image),
-        270 => imageops::rotate270(image),
+        0 => Cow::Borrowed(image),
+        90 => Cow::Owned(imageops::rotate90(image)),
+        180 => Cow::Owned(imageops::rotate180(image)),
+        270 => Cow::Owned(imageops::rotate270(image)),
         _ => unreachable!(),
     }
 }
@@ -292,3 +338,7 @@ fn rotate(image: &RgbImage, degrees: u32) -> RgbImage {
 #[cfg(test)]
 #[path = "attempt_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "geometry_tests.rs"]
+mod geometry_tests;
