@@ -148,12 +148,10 @@ fn score(result: &ScanResult) -> u32 {
                 + if data.checksum_consistent() { 200 } else { 0 }
                 + if data.damaged_recovery { 0 } else { 5 }
         }
-        Err(_) => result
-            .ocr_lines
-            .iter()
-            .map(|line| line.len() as u32)
-            .sum::<u32>()
-            .min(50),
+        // All these regions passed detection geometry checks. Without calibrated
+        // quality metrics, retain the first plausible candidate rather than the
+        // longest garbage OCR (the attempt loop replaces only on a higher score).
+        Err(_) => 0,
     }
 }
 
@@ -257,6 +255,20 @@ fn rotate(image: &RgbImage, degrees: u32) -> RgbImage {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn unparsed_fallback_keeps_first_candidate_regardless_of_ocr_length() {
+        use super::*;
+        let make_result = |text: &str| ScanResult {
+            ocr_lines: vec![text.to_owned()],
+            parsed: mrz::find_and_parse(text),
+            polygon: [imageproc::point::Point::new(0.0, 0.0); 4],
+        };
+        let first = make_result("ABC");
+        let later = make_result(&"GARBAGE".repeat(100));
+        assert!(first.parsed.is_err() && later.parsed.is_err());
+        assert_eq!(score(&first), score(&later));
+    }
+
     #[test]
     fn parses_icao_specimen() {
         let data = mrz::parse_td3(

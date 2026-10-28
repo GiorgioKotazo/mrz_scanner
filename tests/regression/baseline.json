@@ -3,11 +3,11 @@
     "platform": "Linux-6.6.114.1-microsoft-standard-WSL2-x86_64-with-glibc2.39",
     "python": "3.12.3",
     "threads": 2,
-    "binary_sha256": "a8a827604b9b95c120ff3bde38e177d51a0bcdebf59352243d0b918be413a664",
+    "binary_sha256": "68d36901fcea7cab8f281ce71f7c3615eb635f9e4a80462ada6fbbe9b1b47c8b",
     "source_sha256": {
-      "src/image_processing.rs": "d1d8a59de933afadaf843ed0768acecdfa2ea32209d8c5953da3a27c24fb2d77",
-      "src/main.rs": "e2cda7a641716521bf382498b7023b27e8c1adc3ec0ad1f2d0ca5a77e1217853",
-      "src/scanner.rs": "2380de67126d08bf2c1e0d425ecb7b2da600af999987bac3c3569ea5eb19d60a",
+      "src/image_processing.rs": "2cf71541f73e48363da999cbfa8aef31659043a910fb263d369ea1351b72dcec",
+      "src/main.rs": "4a97a8f74aca112b301e1ea16aeab17651e9675fab0e82455b39e1f76337b2a4",
+      "src/scanner.rs": "65d7168d032ca5e1436b6f7b6ce504688c29431504db2392681c7c43168e6ec6",
       "Cargo.lock": "21a8f3b3a4d4bccc54f6e90156f46befddd067c0adf462a68b96abde5c5b637b",
       "Cargo.toml": "a38f80ac434d0fb6f66a77e178de34c303ea9ed03681f13791377c772cb57d97"
     },
@@ -80,8 +80,8 @@
           "TESTER<<ANNA<MARIA<<<<<<<<<<<<"
         ],
         "metrics": {
-          "elapsed_seconds": 2.87,
-          "max_rss_kib": 775124
+          "elapsed_seconds": 2.86,
+          "max_rss_kib": 775628
         }
       }
     },
@@ -95,7 +95,7 @@
         "exit": 0,
         "candidate": true,
         "ocr_lines": [
-          "I<UTOTESTER<<ANNA<MARIA<<<<<<<<<<<<<",
+          "I<UT0TESTER<<ANNA<MARIA<<<<<<<<<<<<<",
           "X123456785UT07408122F1204159<<<<<<<0"
         ],
         "fields": {
@@ -121,11 +121,11 @@
         "polygon": [
           [
             35.0,
-            442.0
+            443.0
           ],
           [
             687.0,
-            442.0
+            443.0
           ],
           [
             687.0,
@@ -146,8 +146,8 @@
           "X123456785UTO7408122F1204159<<<<<<<0"
         ],
         "metrics": {
-          "elapsed_seconds": 2.65,
-          "max_rss_kib": 779168
+          "elapsed_seconds": 2.63,
+          "max_rss_kib": 782100
         }
       }
     },
@@ -162,7 +162,7 @@
         "candidate": true,
         "ocr_lines": [
           "P<UT0TESTER<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<<<",
-          "X123456785UT074O8122FI204159ZE184226B<<<<<12"
+          "X123456785UT074O8122F1204159ZE184226B<<<<<I2"
         ],
         "fields": {
           "Format": "Td3",
@@ -186,20 +186,20 @@
         },
         "polygon": [
           [
-            34.0,
+            35.0,
             443.0
           ],
           [
-            834.0,
+            833.0,
             443.0
           ],
           [
-            834.0,
-            516.0
+            833.0,
+            515.0
           ],
           [
-            34.0,
-            516.0
+            35.0,
+            515.0
           ]
         ],
         "rotation": 0,
@@ -213,7 +213,7 @@
         ],
         "metrics": {
           "elapsed_seconds": 0.48,
-          "max_rss_kib": 691244
+          "max_rss_kib": 678696
         }
       }
     },
@@ -261,11 +261,11 @@
           ],
           [
             835.0,
-            516.0
+            515.0
           ],
           [
             34.0,
-            516.0
+            515.0
           ]
         ],
         "rotation": 0,
@@ -278,8 +278,8 @@
           "X123456785UTO7408122F1204159VISATEST<<<<<<<<"
         ],
         "metrics": {
-          "elapsed_seconds": 5.63,
-          "max_rss_kib": 781100
+          "elapsed_seconds": 2.65,
+          "max_rss_kib": 778408
         }
       }
     },
@@ -319,11 +319,11 @@
         "polygon": [
           [
             35.0,
-            443.0
+            444.0
           ],
           [
             689.0,
-            443.0
+            444.0
           ],
           [
             689.0,
@@ -344,8 +344,8 @@
           "X123456785UTO7408122F1204159<<<<<<<<"
         ],
         "metrics": {
-          "elapsed_seconds": 2.66,
-          "max_rss_kib": 786076
+          "elapsed_seconds": 5.56,
+          "max_rss_kib": 784024
         }
       }
     },
@@ -360,7 +360,7 @@
         "candidate": true,
         "ocr_lines": [
           "P<UT0TESTER<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<<<",
-          "X123456785UT074O8122FI204159ZE184226B<<<<<12"
+          "X123456785UT074O8122F1204159ZE184226B<<<<<I2"
         ],
         "fields": {
           "Format": "Td3",
@@ -384,20 +384,20 @@
         },
         "polygon": [
           [
-            34.0,
+            35.0,
             443.0
           ],
           [
-            834.0,
+            833.0,
             443.0
           ],
           [
-            834.0,
-            516.0
+            833.0,
+            515.0
           ],
           [
-            34.0,
-            516.0
+            35.0,
+            515.0
           ]
         ],
         "rotation": 90,
@@ -411,7 +411,7 @@
         ],
         "metrics": {
           "elapsed_seconds": 0.8,
-          "max_rss_kib": 776880
+          "max_rss_kib": 774436
         }
       }
     },
@@ -426,7 +426,7 @@
         "candidate": true,
         "ocr_lines": [
           "P<UT0TESTER<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<<<",
-          "X123456785UT074O8122FI204159ZE184226B<<<<<12"
+          "X123456785UT074O8122F1204159ZE184226B<<<<<I2"
         ],
         "fields": {
           "Format": "Td3",
@@ -450,20 +450,20 @@
         },
         "polygon": [
           [
-            34.0,
+            35.0,
             443.0
           ],
           [
-            834.0,
+            833.0,
             443.0
           ],
           [
-            834.0,
-            516.0
+            833.0,
+            515.0
           ],
           [
-            34.0,
-            516.0
+            35.0,
+            515.0
           ]
         ],
         "rotation": 180,
@@ -476,8 +476,8 @@
           "X123456785UTO7408122F1204159ZE184226B<<<<<12"
         ],
         "metrics": {
-          "elapsed_seconds": 1.12,
-          "max_rss_kib": 780460
+          "elapsed_seconds": 1.11,
+          "max_rss_kib": 777636
         }
       }
     },
@@ -492,7 +492,7 @@
         "candidate": true,
         "ocr_lines": [
           "P<UT0TESTER<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<<<",
-          "X123456785UT074O8122FI204159ZE184226B<<<<<12"
+          "X123456785UT074O8122F1204159ZE184226B<<<<<I2"
         ],
         "fields": {
           "Format": "Td3",
@@ -516,20 +516,20 @@
         },
         "polygon": [
           [
-            34.0,
+            35.0,
             443.0
           ],
           [
-            834.0,
+            833.0,
             443.0
           ],
           [
-            834.0,
-            516.0
+            833.0,
+            515.0
           ],
           [
-            34.0,
-            516.0
+            35.0,
+            515.0
           ]
         ],
         "rotation": 270,
@@ -542,8 +542,8 @@
           "X123456785UTO7408122F1204159ZE184226B<<<<<12"
         ],
         "metrics": {
-          "elapsed_seconds": 1.6,
-          "max_rss_kib": 779820
+          "elapsed_seconds": 1.58,
+          "max_rss_kib": 776232
         }
       }
     },
@@ -609,7 +609,7 @@
         ],
         "metrics": {
           "elapsed_seconds": 0.48,
-          "max_rss_kib": 679856
+          "max_rss_kib": 681892
         }
       }
     },
@@ -674,8 +674,8 @@
           "X123456785UTO7408122F1204159ZE184226B<<<<<12"
         ],
         "metrics": {
-          "elapsed_seconds": 2.19,
-          "max_rss_kib": 850792
+          "elapsed_seconds": 1.95,
+          "max_rss_kib": 814600
         }
       }
     },
@@ -740,8 +740,8 @@
           "XI234567B5UTO7408122F1284159ZE1842268<<<<<12"
         ],
         "metrics": {
-          "elapsed_seconds": 2.65,
-          "max_rss_kib": 762048
+          "elapsed_seconds": 2.81,
+          "max_rss_kib": 762300
         }
       }
     },
@@ -755,27 +755,27 @@
         "exit": 2,
         "candidate": true,
         "ocr_lines": [
-          "CIVI9ZE5AEB1GONNGI0SPISGRIQG2EIGRESRRRI02II2",
-          "TTT08888DDTDDF8FEFFFDTD9E999999DDDD9999TTTT9"
+          "CIVI9ZE5AEB1GONNOI0QPISG1IQG2EIGGGEGRCIE2II5",
+          "7TDOOD888DDDDFFFFFFDDDDDFFF8MMDDDDDMMDDDT119"
         ],
         "fields": {},
         "checks": {},
         "polygon": [
           [
-            71.0,
-            212.0
+            71.6,
+            211.6
           ],
           [
-            1730.0,
-            212.0
+            1729.8,
+            211.6
           ],
           [
-            1730.0,
-            356.0
+            1729.8,
+            355.8
           ],
           [
-            71.0,
-            356.0
+            71.6,
+            355.8
           ]
         ],
         "rotation": 0,
@@ -784,12 +784,12 @@
         "parse_failed": true,
         "checksum_status": "NOT VERIFIED",
         "normalized_lines": [
-          "CIVI9ZE5AEB1GONNGI0SPISGRIQG2EIGRESRRRI02II2",
-          "TTT08888DDTDDF8FEFFFDTD9E999999DDDD9999TTTT9"
+          "CIVI9ZE5AEB1GONNOI0QPISG1IQG2EIGGGEGRCIE2II5",
+          "7TDOOD888DDDDFFFFFFDDDDDFFF8MMDDDDDMMDDDT119"
         ],
         "metrics": {
-          "elapsed_seconds": 2.73,
-          "max_rss_kib": 800676
+          "elapsed_seconds": 1.67,
+          "max_rss_kib": 788400
         }
       }
     },
@@ -828,20 +828,20 @@
         },
         "polygon": [
           [
-            237.0,
-            2769.0
+            239.7,
+            2771.0
           ],
           [
-            5746.0,
-            2769.0
+            5743.6,
+            2771.0
           ],
           [
-            5746.0,
-            3220.0
+            5743.6,
+            3220.2
           ],
           [
-            237.0,
-            3220.0
+            239.7,
+            3220.2
           ]
         ],
         "rotation": 0,
@@ -854,8 +854,8 @@
           "X123456785UTO7408122F1204159ZE184226B<<<<<12"
         ],
         "metrics": {
-          "elapsed_seconds": 0.81,
-          "max_rss_kib": 988800
+          "elapsed_seconds": 0.68,
+          "max_rss_kib": 885236
         }
       }
     },
@@ -869,28 +869,28 @@
         "exit": 2,
         "candidate": true,
         "ocr_lines": [
-          "IZZ0AZADDO00IIM7IWWVD0D0M526GP",
-          "4YN666NNND00000T2X99OAA57PTTTT",
-          "78590T00W00I077500700007LA991I"
+          "I000ZZDOOOO0DMNCLWAAAAAAW44446",
+          "4NN666NNYDT0L0417B866AA597F1Y1",
+          "78E0T071T0V0777557L05447479911"
         ],
         "fields": {},
         "checks": {},
         "polygon": [
           [
-            2702.0,
-            425.0
+            2696.8,
+            428.8
           ],
           [
-            3264.0,
-            537.0
+            3263.2,
+            514.7
           ],
           [
-            3221.0,
-            754.0
+            3231.9,
+            733.5
           ],
           [
-            2659.0,
-            642.0
+            2661.6,
+            647.5
           ]
         ],
         "rotation": 0,
@@ -899,13 +899,13 @@
         "parse_failed": true,
         "checksum_status": "NOT VERIFIED",
         "normalized_lines": [
-          "IZZ0AZADDO00IIM7IWWVD0D0M526GP",
-          "4YN666NNND00000T2X99OAA57PTTTT",
-          "78590T00W00I077500700007LA991I"
+          "I000ZZDOOOO0DMNCLWAAAAAAW44446",
+          "4NN666NNYDT0L0417B866AA597F1Y1",
+          "78E0T071T0V0777557L05447479911"
         ],
         "metrics": {
-          "elapsed_seconds": 3.39,
-          "max_rss_kib": 925972
+          "elapsed_seconds": 2.51,
+          "max_rss_kib": 825884
         }
       }
     },
@@ -916,48 +916,20 @@
         480
       ],
       "result": {
-        "exit": 2,
-        "candidate": true,
-        "ocr_lines": [
-          "WUVVVV2VVVVVLJJJLLLLLLLJJJVVJJ",
-          "V055J",
-          "LXXVVVV",
-          "NJBBBBB555BB555555555BBNNNNK"
-        ],
+        "exit": 1,
+        "candidate": false,
+        "ocr_lines": [],
         "fields": {},
         "checks": {},
-        "polygon": [
-          [
-            637.0,
-            465.0
-          ],
-          [
-            639.0,
-            465.0
-          ],
-          [
-            639.0,
-            502.0
-          ],
-          [
-            637.0,
-            502.0
-          ]
-        ],
+        "polygon": [],
         "rotation": 0,
         "center_crop": false,
         "recovered": false,
-        "parse_failed": true,
-        "checksum_status": "NOT VERIFIED",
-        "normalized_lines": [
-          "WUVVVV2VVVVVLJJJLLLLLLLJJJVVJJ",
-          "V055J",
-          "LXXVVVV",
-          "NJBBBBB555BB555555555BBNNNNK"
-        ],
+        "parse_failed": false,
+        "normalized_lines": [],
         "metrics": {
-          "elapsed_seconds": 2.67,
-          "max_rss_kib": 770228
+          "elapsed_seconds": 0.52,
+          "max_rss_kib": 220588
         }
       }
     },
@@ -968,48 +940,20 @@
         480
       ],
       "result": {
-        "exit": 2,
-        "candidate": true,
-        "ocr_lines": [
-          "555999999999999999999999999999",
-          "99559",
-          "5559555",
-          "5955555595999599990999999999"
-        ],
+        "exit": 1,
+        "candidate": false,
+        "ocr_lines": [],
         "fields": {},
         "checks": {},
-        "polygon": [
-          [
-            513.0,
-            -6.0
-          ],
-          [
-            547.0,
-            -39.0
-          ],
-          [
-            574.0,
-            -12.0
-          ],
-          [
-            540.0,
-            22.0
-          ]
-        ],
+        "polygon": [],
         "rotation": 0,
         "center_crop": false,
         "recovered": false,
-        "parse_failed": true,
-        "checksum_status": "NOT VERIFIED",
-        "normalized_lines": [
-          "555999999999999999999999999999",
-          "99559",
-          "5559555",
-          "5955555595999599990999999999"
-        ],
+        "parse_failed": false,
+        "normalized_lines": [],
         "metrics": {
-          "elapsed_seconds": 2.65,
-          "max_rss_kib": 768044
+          "elapsed_seconds": 0.52,
+          "max_rss_kib": 220844
         }
       }
     },
@@ -1020,46 +964,20 @@
         480
       ],
       "result": {
-        "exit": 2,
-        "candidate": true,
-        "ocr_lines": [
-          "I92T88TTTTT8TTTTT8OTTT8EX9OXX88OOOOS",
-          "B2L3TL3",
-          "8288888888888888882288800008"
-        ],
+        "exit": 1,
+        "candidate": false,
+        "ocr_lines": [],
         "fields": {},
         "checks": {},
-        "polygon": [
-          [
-            602.0,
-            473.0
-          ],
-          [
-            606.0,
-            470.0
-          ],
-          [
-            608.0,
-            472.0
-          ],
-          [
-            604.0,
-            476.0
-          ]
-        ],
+        "polygon": [],
         "rotation": 0,
         "center_crop": false,
         "recovered": false,
-        "parse_failed": true,
-        "checksum_status": "NOT VERIFIED",
-        "normalized_lines": [
-          "I92T88TTTTT8TTTTT8OTTT8EX9OXX88OOOOS",
-          "B2L3TL3",
-          "8288888888888888882288800008"
-        ],
+        "parse_failed": false,
+        "normalized_lines": [],
         "metrics": {
-          "elapsed_seconds": 2.68,
-          "max_rss_kib": 769200
+          "elapsed_seconds": 0.52,
+          "max_rss_kib": 219052
         }
       }
     },
@@ -1074,7 +992,7 @@
         "candidate": true,
         "ocr_lines": [
           "P<UT0TESTER<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<<<",
-          "Y123456785UT074O8122F1204159ZE184226B<<<<<12"
+          "Y123456785UT074O8122FI2O4159ZE184226B<<<<<12"
         ],
         "fields": {
           "Format": "Td3",
@@ -1102,11 +1020,11 @@
             443.0
           ],
           [
-            834.0,
+            833.0,
             443.0
           ],
           [
-            834.0,
+            833.0,
             516.0
           ],
           [
@@ -1124,8 +1042,8 @@
           "Y123456785UTO7408122F1204159ZE184226B<<<<<12"
         ],
         "metrics": {
-          "elapsed_seconds": 2.68,
-          "max_rss_kib": 782384
+          "elapsed_seconds": 2.74,
+          "max_rss_kib": 777380
         }
       }
     },
@@ -1139,27 +1057,27 @@
         "exit": 2,
         "candidate": true,
         "ocr_lines": [
-          "ABCDEFGHIJKLMN0P0RSTUVWXYZ<<<<<<<<<<<<<<<<<<",
-          "ABCDEFGHI0KLMN0P0RSTUVWXYZ<<<<<<<<<<<<<<<<<<"
+          "ABCDEFGHIJKLMNOP0RSTUVWXYZ<<<<<<<<<<<<<<<<<<",
+          "ABCDEFGHIIKLMN0P0RSTUVWXYZ<<<<<<<<<<<<<<<<<<"
         ],
         "fields": {},
         "checks": {},
         "polygon": [
           [
-            34.0,
-            445.0
+            33.0,
+            443.0
           ],
           [
             835.0,
-            445.0
+            441.0
           ],
           [
-            835.0,
-            516.0
+            836.0,
+            514.0
           ],
           [
             34.0,
-            516.0
+            517.0
           ]
         ],
         "rotation": 0,
@@ -1168,12 +1086,12 @@
         "parse_failed": true,
         "checksum_status": "NOT VERIFIED",
         "normalized_lines": [
-          "ABCDEFGHIJKLMN0P0RSTUVWXYZ<<<<<<<<<<<<<<<<<<",
-          "ABCDEFGHI0KLMN0P0RSTUVWXYZ<<<<<<<<<<<<<<<<<<"
+          "ABCDEFGHIJKLMNOP0RSTUVWXYZ<<<<<<<<<<<<<<<<<<",
+          "ABCDEFGHIIKLMN0P0RSTUVWXYZ<<<<<<<<<<<<<<<<<<"
         ],
         "metrics": {
-          "elapsed_seconds": 5.6,
-          "max_rss_kib": 780332
+          "elapsed_seconds": 2.7,
+          "max_rss_kib": 777120
         }
       }
     },
@@ -1212,20 +1130,20 @@
         },
         "polygon": [
           [
-            145.0,
-            1910.0
+            143.2,
+            1908.2
           ],
           [
-            1664.0,
-            1969.0
+            1663.2,
+            1970.8
           ],
           [
-            1658.0,
-            2118.0
+            1658.2,
+            2118.2
           ],
           [
-            139.0,
-            2058.0
+            138.2,
+            2058.2
           ]
         ],
         "rotation": 0,
@@ -1238,8 +1156,8 @@
           "C946302620AZE6707297F23031072W12IMJ<<<<<<<40"
         ],
         "metrics": {
-          "elapsed_seconds": 0.58,
-          "max_rss_kib": 803872
+          "elapsed_seconds": 0.51,
+          "max_rss_kib": 750364
         }
       }
     },
@@ -1250,46 +1168,20 @@
         128
       ],
       "result": {
-        "exit": 2,
-        "candidate": true,
-        "ocr_lines": [
-          "LLPP3LLL0NNN0NNNLLLLLLLBBBBLLBMBBBBL",
-          "LL2MBBB",
-          "777MBWW0TT0005058LBMNB3388B0"
-        ],
+        "exit": 1,
+        "candidate": false,
+        "ocr_lines": [],
         "fields": {},
         "checks": {},
-        "polygon": [
-          [
-            82.0,
-            117.0
-          ],
-          [
-            108.0,
-            117.0
-          ],
-          [
-            108.0,
-            124.0
-          ],
-          [
-            82.0,
-            124.0
-          ]
-        ],
+        "polygon": [],
         "rotation": 0,
         "center_crop": false,
         "recovered": false,
-        "parse_failed": true,
-        "checksum_status": "NOT VERIFIED",
-        "normalized_lines": [
-          "LLPP3LLL0NNN0NNNLLLLLLLBBBBLLBMBBBBL",
-          "LL2MBBB",
-          "777MBWW0TT0005058LBMNB3388B0"
-        ],
+        "parse_failed": false,
+        "normalized_lines": [],
         "metrics": {
-          "elapsed_seconds": 1.42,
-          "max_rss_kib": 760616
+          "elapsed_seconds": 0.32,
+          "max_rss_kib": 218660
         }
       }
     },
@@ -1361,7 +1253,7 @@
         "normalized_lines": [],
         "metrics": {
           "elapsed_seconds": 0.0,
-          "max_rss_kib": 8448
+          "max_rss_kib": 8576
         }
       }
     }

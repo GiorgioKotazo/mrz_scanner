@@ -3,10 +3,6 @@
   "tiny": "232x160 synthetic document is currently detected but not checksum-valid.",
   "stretched": "1800x320 synthetic document currently produces incorrect OCR/format.",
   "panorama": "6000x800 panorama currently produces incorrect OCR/format.",
-  "white": "Plan 2: uniform white 640x480 currently produces a false candidate and exit 2.",
-  "black": "Plan 2: uniform black 640x480 currently produces a false candidate and exit 2.",
-  "solid": "Plan 2: uniform blue 640x480 currently produces a false candidate and exit 2.",
-  "photo": "Plan 2: ordinary non-document photograph currently produces a false candidate and exit 2.",
   "usage-no-argument": "Plan 5: clap exits 2 rather than 1; no candidate is printed.",
   "usage-unknown-flag": "Plan 5: clap exits 2 rather than 1; no candidate is printed.",
   "usage-nonnumeric-threads": "Plan 5: clap exits 2 rather than 1; no candidate is printed."
