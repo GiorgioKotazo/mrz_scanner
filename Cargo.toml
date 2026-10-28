@@ -1,0 +1,18 @@
+[package]
+name = "mrz_scanner"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0"
+clap = { version = "4.5", features = ["derive"] }
+image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
+imageproc = { version = "0.27", default-features = false }
+mrz = "0.9.1"
+ndarray = "0.17"
+ort = "=2.0.0-rc.15"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true
