@@ -128,19 +128,72 @@ The detection model input, heatmap, binarization, and aligned MRZ are saved. **T
 
 ## Tests
 
+Tests are split by purpose; the default suite does not need DOCSAID model files:
+
+| Suite | Location | Coverage |
+|---|---|---|
+| Fast unit tests | `src/image_processing.rs`, `src/scanner.rs`, `src/geometry_tests.rs`, `src/score_tests.rs`, `src/output_tests.rs` | BGR/NCHW, normalization, decoder, Otsu, bilinear resize/letterbox, odd dimensions, geometry, rotations/crop, ranking, formatting |
+| Model-free orchestration | `src/attempt_tests.rs` | Injected scan results, attempt order/early stop, candidate selection, recovery, output and exit status |
+| Model-free CLI integration | `tests/cli.rs` | Arguments, help/version, missing models, missing/undecodable images, exit codes |
+| ONNX model integration (explicit) | `src/scanner_model_tests.rs`, `tests/models.rs` | DOCSAID specimen, all five formats, rotations/crop, no-MRZ, unverified candidates, small/perspective documents, fields and checksums |
+| Public image regressions (explicit) | `tests/regression/` | OCR/fields/checksum/polygon baseline, large/panoramic inputs, documented OCR limitations |
+
+Orchestration tests stay inside the binary crate to exercise its private scanner
+callback without exposing a public API just for tests. Prepared results live in
+`src/test_support.rs`; subprocess helpers live in `tests/support/mod.rs`.
+Formatting writes to an injected buffer in tests, so output can be checked without
+capturing global stdout. Assertions inspect semantic sections, not a snapshot of
+all console output. There is no standalone test of the third-party MRZ parser.
+
+### Fast checks
+
 ```bash
 cargo fmt --all -- --check
-cargo test --all-targets
-cargo clippy --all-targets -- -D warnings
+cargo test --locked --all-targets
+cargo clippy --locked --all-targets -- -D warnings
+python3 -m unittest discover -s tests/regression -p 'test_*.py' -v
 
-# Explicit model tests, including CLI scan exit codes (requires both ONNX files):
-cargo test --release -- --ignored --test-threads=1
+# Optional focused runs, still without model files:
+cargo test --locked --bin mrz_scanner attempt_tests::
+cargo test --locked --test cli
 ```
 
-The default tests include CLI usage/help/version, missing models, image decoding
-errors, prepared scan outcomes, and document-field formatting without model files.
-See [the regression suite](tests/regression/README.md) for public image fixtures
-and full black-box model regression commands.
+`--locked` keeps dependency resolution consistent with `Cargo.lock`. Compilation
+may download dependencies and ONNX Runtime, but fast tests do not load DOCSAID
+weights or perform inference. Python harness self-tests use only the standard library.
+
+### Explicit model suite
+
+On Linux with Python 3.10+ and GNU `/usr/bin/time`:
+
+```bash
+./scripts/download_models.sh
+./scripts/test_models.sh
+
+# Rust model tests only (requires both model files):
+cargo test --locked --release --all-targets -- --ignored --test-threads=1
+```
+
+The script fails if models are missing; it never silently skips them or downloads
+them implicitly. It runs all ignored Rust model tests serially, builds the release
+CLI, then runs the full public Python regression suite, including slow cases.
+Serial inference avoids loading multiple ~1 GiB pipelines concurrently. Only
+public/synthetic fixtures are used; private files are never part of this script or CI.
+The regression runner reports four documented OCR cases as `XFAIL` and rejects new
+contract violations or baseline changes; Rust model tests have no expected failures.
+See [the regression suite](tests/regression/README.md) for details.
+
+### CI
+
+[GitHub Actions](.github/workflows/ci.yml) runs on pushes, pull requests, and manual
+requests, with two visible jobs on Ubuntu:
+
+1. **Formatting, model-free tests and Clippy** — the fast checks above, without model files.
+2. **ONNX model and public image regressions** — downloads/caches both models,
+   verifies their SHA-256 hashes even on cache hits, then runs `scripts/test_models.sh`.
+
+The model job runs after the fast job succeeds; it is not an optional or
+`continue-on-error` step. Model download, build, or test failures fail the job.
 
 ## Models
 

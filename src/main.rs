@@ -132,7 +132,7 @@ fn run(args: Args) -> Result<bool> {
         )
         .with_context(|| format!("no readable MRZ found in {}", args.image.display()))?;
 
-    print_result(&candidate)
+    write_result(&mut io::stdout().lock(), &candidate)
 }
 
 // Keep orchestration independent of ONNX so stop/selection rules can be tested
@@ -248,19 +248,20 @@ fn score(result: &ScanResult) -> Score {
     }
 }
 
-fn print_result(candidate: &Candidate) -> Result<bool> {
+fn write_result(out: &mut impl Write, candidate: &Candidate) -> Result<bool> {
     let result = &candidate.result;
-    println!("MRZ (OCR):");
+    writeln!(out, "MRZ (OCR):")?;
     for line in &result.ocr_lines {
-        println!("{line}");
+        writeln!(out, "{line}")?;
     }
     if candidate.rotation != 0 {
-        println!("Image rotation applied: {}°", candidate.rotation);
+        writeln!(out, "Image rotation applied: {}°", candidate.rotation)?;
     }
     if candidate.center_crop {
-        println!("Center crop applied: yes");
+        writeln!(out, "Center crop applied: yes")?;
     }
-    println!(
+    writeln!(
+        out,
         "MRZ quadrangle: [{}] (original image pixels)",
         result
             .polygon
@@ -268,27 +269,27 @@ fn print_result(candidate: &Candidate) -> Result<bool> {
             .map(|point| format!("({:.1}, {:.1})", point.x, point.y))
             .collect::<Vec<_>>()
             .join(", ")
-    );
+    )?;
 
     match &result.parsed {
         Ok(data) => {
             let raw = result.ocr_lines.join("\n");
             if data.mrz_lines != raw {
-                println!("\nMRZ after checksum-guided normalization/repair:");
-                println!("{}", data.mrz_lines);
+                writeln!(out, "\nMRZ after checksum-guided normalization/repair:")?;
+                writeln!(out, "{}", data.mrz_lines)?;
             }
-            write_data(&mut io::stdout().lock(), data)?;
+            write_data(out, data)?;
             let valid = data.checksum_consistent();
             if valid {
-                println!("Checksum status: OK");
+                writeln!(out, "Checksum status: OK")?;
             } else {
-                println!("Checksum status: FAILED — data may contain OCR errors");
+                writeln!(out, "Checksum status: FAILED — data may contain OCR errors")?;
             }
             Ok(valid)
         }
         Err(error) => {
-            println!("\nCould not parse MRZ: {error}");
-            println!("Checksum status: NOT VERIFIED");
+            writeln!(out, "\nCould not parse MRZ: {error}")?;
+            writeln!(out, "Checksum status: NOT VERIFIED")?;
             Ok(false)
         }
     }
@@ -381,9 +382,12 @@ fn rotate(image: &RgbImage, degrees: u32) -> Cow<'_, RgbImage> {
 }
 
 #[cfg(test)]
-#[path = "attempt_tests.rs"]
-mod tests;
-
+mod attempt_tests;
 #[cfg(test)]
-#[path = "geometry_tests.rs"]
 mod geometry_tests;
+#[cfg(test)]
+mod output_tests;
+#[cfg(test)]
+mod score_tests;
+#[cfg(test)]
+mod test_support;

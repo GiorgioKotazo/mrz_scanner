@@ -1,69 +1,9 @@
+//! Model-free integration of attempt orchestration, selection, output and exit status.
+//! Kept inside the binary crate so the scanner callback need not become public API.
 use super::*;
+use crate::test_support::{FORMATS, failed, ocr, valid};
 use mrz::Format;
 use std::collections::VecDeque;
-
-const FORMATS: [Format; 5] = [
-    Format::Td1,
-    Format::Td2,
-    Format::Td3,
-    Format::MrvA,
-    Format::MrvB,
-];
-
-fn ocr(text: &str) -> ScanResult {
-    ScanResult {
-        ocr_lines: text.lines().map(str::to_owned).collect(),
-        parsed: mrz::find_and_parse(text),
-        polygon: [imageproc::point::Point::new(0.0, 0.0); 4],
-    }
-}
-
-fn valid(format: Format, recovered: bool) -> ScanResult {
-    // Public synthetic specimens from tests/regression/cases.json. Only the
-    // recovery flag is injected: these tests exercise selection, not OCR repair.
-    let text = match format {
-        Format::Td1 => {
-            "I<UTOX123456785<<<<<<<<<<<<<<<\n7408122F1204159UTO<<<<<<<<<<<0\nTESTER<<ANNA<MARIA<<<<<<<<<<<<"
-        }
-        Format::Td2 => "I<UTOTESTER<<ANNA<MARIA<<<<<<<<<<<<<\nX123456785UTO7408122F1204159<<<<<<<0",
-        Format::Td3 => {
-            "P<UTOTESTER<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<<<\nX123456785UTO7408122F1204159ZE184226B<<<<<12"
-        }
-        Format::MrvA => {
-            "V<UTOTESTER<<ANNA<MARIA<<<<<<<<<<<<<<<<<<<<<\nX123456785UTO7408122F1204159VISATEST<<<<<<<<"
-        }
-        Format::MrvB => {
-            "V<UTOTESTER<<ANNA<MARIA<<<<<<<<<<<<<\nX123456785UTO7408122F1204159<<<<<<<<"
-        }
-        _ => panic!("unsupported test format"),
-    };
-    let mut result = ocr(text);
-    let data = result.parsed.as_mut().unwrap();
-    assert_eq!(data.format, format);
-    assert!(data.checksum_consistent());
-    data.damaged_recovery = recovered;
-    result
-}
-
-fn failed(format: Format, verified: u8) -> ScanResult {
-    let mut result = valid(format, false);
-    let checks = &mut result.parsed.as_mut().unwrap().checks;
-    assert!(verified < checks.applicable());
-    for (index, check) in [
-        &mut checks.document_number,
-        &mut checks.date_of_birth,
-        &mut checks.date_of_expiry,
-        &mut checks.personal_number,
-        &mut checks.composite,
-    ]
-    .into_iter()
-    .flatten()
-    .enumerate()
-    {
-        *check = index < usize::from(verified);
-    }
-    result
-}
 
 fn attempts(results: Vec<Result<ScanResult>>) -> (Result<Candidate>, Vec<(bool, u32)>) {
     let mut results = VecDeque::from(results);
@@ -77,55 +17,8 @@ fn attempts(results: Vec<Result<ScanResult>>) -> (Result<Candidate>, Vec<(bool, 
     (candidate, calls)
 }
 
-fn formatted_data(data: &MrzData) -> String {
-    let mut output = Vec::new();
-    write_data(&mut output, data).unwrap();
-    String::from_utf8(output).unwrap()
-}
-
-#[test]
-fn document_output_is_format_neutral_and_preserves_optional_slots() {
-    for format in FORMATS {
-        let mut data = valid(format, false).parsed.unwrap();
-        // Prepared parsed fields isolate formatting from parser/OCR behavior.
-        data.optional_data_1 = Some("PRIMARY123".into());
-        data.optional_data_2 = (format == Format::Td1).then(|| "SECOND456".into());
-        let text = formatted_data(&data);
-        let (fields, checks) = text.split_once("\nCheck digits:").unwrap();
-        assert!(fields.contains("Document data:"), "{format:?}");
-        assert!(fields.contains("Document number:  X12345678"));
-        assert!(checks.contains("Document number:  OK"));
-        assert!(!text.contains("Passport"));
-        if format == Format::Td3 {
-            assert!(fields.contains("Personal number:  PRIMARY123"));
-            assert!(!fields.contains("Optional data 1:"));
-        } else {
-            assert!(fields.contains("Optional data 1:  PRIMARY123"));
-            assert!(!fields.contains("Personal number:"));
-            assert!(checks.contains("Personal number:  N/A"));
-        }
-        assert_eq!(
-            fields.contains("Optional data 2:  SECOND456"),
-            format == Format::Td1
-        );
-        assert!(!text.contains("Recovery:"));
-    }
-}
-
-#[test]
-fn empty_optional_fields_are_omitted_and_recovery_is_visible() {
-    for format in FORMATS {
-        for empty in [None, Some(String::new())] {
-            let mut data = valid(format, true).parsed.unwrap();
-            data.optional_data_1 = empty.clone();
-            data.optional_data_2 = empty;
-            let text = formatted_data(&data);
-            let fields = text.split_once("\nCheck digits:").unwrap().0;
-            assert!(!fields.contains("Optional data"));
-            assert!(!fields.contains("Personal number:"));
-            assert!(text.contains("Recovery:         checksum-guided OCR repair was applied"));
-        }
-    }
+fn candidate_exit_code(candidate: &Candidate) -> ExitCode {
+    exit_code(write_result(&mut Vec::new(), candidate))
 }
 
 #[test]
@@ -145,7 +38,12 @@ fn recovered_valid_never_stops_and_retains_success_contract() {
         let best = best.unwrap();
         assert!(best.result.parsed.as_ref().unwrap().damaged_recovery);
         // Exercises the same output/status path as main, including Recovery.
-        assert_eq!(exit_code(print_result(&best)), ExitCode::SUCCESS);
+        let mut output = Vec::new();
+        assert_eq!(
+            exit_code(write_result(&mut output, &best)),
+            ExitCode::SUCCESS
+        );
+        assert!(String::from_utf8(output).unwrap().contains("Recovery:"));
     }
 }
 
@@ -163,33 +61,6 @@ fn later_clean_replaces_recovered_across_formats() {
         let data = best.result.parsed.unwrap();
         assert_eq!(data.format, format);
         assert!(!data.damaged_recovery);
-    }
-}
-
-#[test]
-fn quality_tiers_are_strict_and_format_neutral() {
-    for format in FORMATS {
-        let ordered = [
-            ocr("GARBAGE"),
-            failed(format, 0),
-            valid(format, true),
-            valid(format, false),
-        ];
-        for pair in ordered.windows(2) {
-            assert_eq!(score(&pair[0]).cmp(&score(&pair[1])), Ordering::Less);
-        }
-        for other_format in FORMATS {
-            for recovered in [false, true] {
-                assert_eq!(
-                    score(&valid(format, recovered)).cmp(&score(&failed(other_format, 2))),
-                    Ordering::Greater
-                );
-                assert_eq!(
-                    score(&valid(format, recovered)).cmp(&score(&valid(other_format, recovered))),
-                    Ordering::Equal
-                );
-            }
-        }
     }
 }
 
@@ -236,7 +107,7 @@ fn zero_applicable_checks_are_not_valid_or_a_division_by_zero() {
     );
     let (best, calls) = attempts(vec![Ok(result)]);
     assert_eq!(calls.len(), 8);
-    assert_eq!(exit_code(print_result(&best.unwrap())), ExitCode::from(2));
+    assert_eq!(candidate_exit_code(&best.unwrap()), ExitCode::from(2));
 }
 
 #[test]
@@ -249,7 +120,7 @@ fn unparsed_fallback_keeps_first_regardless_of_ocr_length() {
     assert_eq!(calls.len(), 8);
     let best = best.unwrap();
     assert_eq!(best.result.ocr_lines, ["ABC"]);
-    assert_eq!(exit_code(print_result(&best)), ExitCode::from(2));
+    assert_eq!(candidate_exit_code(&best), ExitCode::from(2));
 }
 
 #[test]
@@ -292,7 +163,7 @@ fn attempt_errors_preserve_candidate_and_crop_order() {
     assert!(best.center_crop);
     assert_eq!(best.rotation, 0);
     assert_eq!(best.result.parsed.as_ref().unwrap().format, Format::Td2);
-    assert_eq!(exit_code(print_result(&best)), ExitCode::from(2));
+    assert_eq!(candidate_exit_code(&best), ExitCode::from(2));
 }
 
 #[test]

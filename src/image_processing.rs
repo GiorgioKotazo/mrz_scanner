@@ -530,6 +530,44 @@ mod tests {
     }
 
     #[test]
+    fn bilinear_resize_uses_half_pixel_centers_and_clamped_edges() {
+        // Independent expected samples, not a comparison of two callers of
+        // the same interpolation helper. Quarter weights give 64 and 191.
+        let gray = GrayImage::from_raw(2, 1, vec![0, 255]).unwrap();
+        assert_eq!(
+            resize_gray_bilinear(&gray, 4, 1).into_raw(),
+            [0, 64, 191, 255]
+        );
+        let vertical = GrayImage::from_raw(1, 2, vec![0, 255]).unwrap();
+        assert_eq!(
+            resize_gray_bilinear(&vertical, 1, 4).into_raw(),
+            [0, 64, 191, 255]
+        );
+        let rgb = RgbImage::from_raw(2, 1, vec![0, 255, 100, 255, 0, 100]).unwrap();
+        assert_eq!(
+            resize_rgb_bilinear(&rgb, 4, 1).into_raw(),
+            [0, 255, 100, 64, 191, 100, 191, 64, 100, 255, 0, 100]
+        );
+    }
+
+    #[test]
+    fn bilinear_resize_downsamples_both_axes_and_preserves_single_pixels() {
+        let rgb = RgbImage::from_raw(
+            2,
+            2,
+            vec![0, 40, 80, 80, 120, 160, 160, 200, 240, 240, 160, 80],
+        )
+        .unwrap();
+        assert_eq!(resize_rgb_bilinear(&rgb, 1, 1).into_raw(), [120, 130, 140]);
+        let pixel = Rgb([17, 99, 203]);
+        assert_eq!(
+            resize_rgb_bilinear(&RgbImage::from_pixel(1, 1, pixel), 3, 5),
+            RgbImage::from_pixel(3, 5, pixel)
+        );
+        assert_eq!(resize_rgb_bilinear(&rgb, 2, 2), rgb);
+    }
+
+    #[test]
     fn letterbox_matches_resize_of_correctly_padded_square() {
         for (width, height) in [(2, 3), (4, 3), (3, 4), (640, 480), (333, 790)] {
             let image = RgbImage::from_fn(width, height, |x, y| {

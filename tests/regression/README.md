@@ -1,4 +1,4 @@
-# Регрессионная база — пункты 1–5 plan-0001
+# Регрессионная база — пункты 1–6 plan-0001
 
 Набор создан в пункте 1; публичный baseline записан после реализации пункта 2.
 В пункте 5 точечно обновлены ожидания вывода: три usage exit code (`2` → `1`),
@@ -15,7 +15,12 @@
 Из корня проекта, Linux, Python 3.10+, GNU `/usr/bin/time`, обе штатные ONNX-модели:
 
 ```bash
-cargo build --release
+# Весь model-набор: Rust ONNX-тесты и полная публичная регрессия:
+./scripts/download_models.sh
+./scripts/test_models.sh
+
+# Либо только Python-регрессия:
+cargo build --locked --release
 # Полная публичная регрессия, включая 6000×4000 и панораму 6000×800:
 python3 tests/regression/run.py --include-slow
 # Без двух больших сценариев:
@@ -119,6 +124,59 @@ cargo test --release -- --ignored --test-threads=1
 ```bash
 cargo test --release -- --ignored --test-threads=1
 ```
+
+## Структура тестов и CI — пункт 6
+
+Быстрые unit-тесты отделены от интеграционных сценариев и ONNX-проверок:
+
+- `src/image_processing.rs` — BGR/NCHW, `/255`, Otsu, resize/letterbox,
+  обратный масштаб, нечётные размеры и геометрическая фильтрация.
+  Добавлены независимые ожидаемые значения bilinear resize по обеим осям,
+  downsampling и случай одного пикселя.
+- `src/scanner.rs` — только быстрые decoder-тесты: классы, EOS, padding,
+  пустые/неправильные выходы.
+- `src/geometry_tests.rs`, `src/score_tests.rs`, `src/output_tests.rs` —
+  координаты/повороты/crop, ранжирование, форматирование секций и статусов.
+- `src/attempt_tests.rs` — интеграция оркестрации с подменяемым scanner callback,
+  выбор кандидата, восстановление и коды завершения **без ONNX**. Эти тесты
+  остаются внутри binary crate ради доступа к приватным функциям, а не требуют
+  искусственного публичного API. Общие результаты сканирования вынесены в
+  `src/test_support.rs`. Вывод проверяется через переданный буфер `Write`,
+  без записи тестами в глобальный stdout.
+- `tests/cli.rs` — отдельный model-free target: CLI parsing, коды завершения,
+  help/version, отсутствие моделей, отсутствующий/недекодируемый файл.
+- `src/scanner_model_tests.rs` — отдельный ignored-модуль detection-регрессии;
+  сохраняет один scanner на все сценарии, поскольку ORT допускает построение
+  только одного environment на процесс. Проверяет также число recognition inference.
+- `tests/models.rs` — отдельный ignored-target полного CLI pipeline:
+  DOCSAID, TD1/TD2/TD3/MRV-A/MRV-B, повороты/crop, no-MRZ, parse/checksum failure.
+  Сравниваются основные поля и отдельные checksum, не весь stdout целиком.
+- `tests/support/mod.rs` — общие subprocess helpers, не отдельный test target.
+
+Самостоятельного `parses_icao_specimen`, проверяющего только сторонний `mrz`,
+в проекте нет. Официальный образец проверяется через изображение → ONNX →
+parser → CLI, а подготовленные MRZ используются для проверки логики приложения.
+
+`.github/workflows/ci.yml` добавляет две явные задачи на push/PR/manual dispatch:
+
+1. **fast-tests**: `cargo fmt --all -- --check`, `cargo test --locked --all-targets`,
+   `cargo clippy --locked --all-targets -- -D warnings` и Python self-tests.
+   Модели в этой задаче не загружаются.
+2. **model-tests**: после успешных быстрых проверок — загрузка/кеширование
+   моделей с обязательной SHA-256-проверкой, затем `scripts/test_models.sh`.
+   Скрипт запускает Rust model-тесты последовательно и полный публичный
+   Python-набор, включая большие входы. Без моделей он завершается ошибкой;
+   нет автоматического skip или `continue-on-error`. Приватные входы не используются.
+
+Четыре известные OCR-ошибки остаются явными XFAIL только в Python-регрессии;
+Rust model-тесты требуют выполнения всех своих assertions. Публичный baseline
+и `known-failures.json` при реорганизации тестов не меняются.
+
+Локальная проверка пункта 6: **40 быстрых Rust-тестов**, **6 явных model-тестов**
+и **12 Python self-tests** прошли; публичный набор — **20 PASS / 4 прежних XFAIL**,
+без неожиданных отклонений. Быстрый Rust-набор дополнительно выполнен в копии
+проекта без каталога `models/`; model-скрипт в той же копии завершился кодом `1`
+с инструкцией загрузить модели. Форматирование, Clippy и shell syntax check прошли.
 
 ## Зафиксированный контракт результата
 

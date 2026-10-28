@@ -194,79 +194,39 @@ fn decode_recognition(values: &[f32], shape: &[usize]) -> Result<Vec<String>> {
 }
 
 #[cfg(test)]
+#[path = "scanner_model_tests.rs"]
+mod model_tests;
+
+#[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    #[ignore = "requires DOCSAID ONNX models; run with --release --ignored"]
-    fn detection_model_regression() {
-        use crate::image_processing::resize_rgb_bilinear;
-        use image::{Rgb, imageops};
-        use imageproc::geometric_transformations::{Border, Interpolation, Projection, warp_into};
-
-        let root = Path::new(env!("CARGO_MANIFEST_DIR"));
-        let fixtures = root.join("tests/regression/fixtures");
-        let mut scanner = MrzScanner::new(&root.join("models"), 2).unwrap();
-        for name in ["white.png", "black.png", "solid.png", "photo.jpg"] {
-            let image = image::open(fixtures.join(name)).unwrap().to_rgb8();
-            for input in [image.clone(), crate::center_square(&image)] {
-                for rotation in [0, 90, 180, 270] {
-                    assert!(
-                        scanner.scan(&crate::rotate(&input, rotation)).is_err(),
-                        "{name}/{rotation}"
-                    );
-                }
-            }
-        }
-        assert_eq!(
-            scanner.recognition_runs, 0,
-            "negative fixtures must not reach recognition"
-        );
-
-        let original = image::open(fixtures.join("td3.png")).unwrap().to_rgb8();
-        let small = resize_rgb_bilinear(&original, 608, 448);
-        let (w, h) = (original.width() as f32, original.height() as f32);
-        let projection = Projection::from_control_points(
-            [(0.0, 0.0), (w, 0.0), (w, h), (0.0, h)],
-            [
-                (30.0, 15.0),
-                (w - 50.0, 0.0),
-                (w - 10.0, h - 15.0),
-                (10.0, h - 40.0),
-            ],
-        )
-        .unwrap();
-        let mut perspective = RgbImage::new(original.width(), original.height());
-        warp_into(
-            &original,
-            projection,
-            Interpolation::Bilinear,
-            Border::Constant(Rgb([238, 233, 221])),
-            &mut perspective,
-        );
-        for (name, image) in [
-            ("original", original),
-            ("small", small),
-            ("perspective", perspective),
+    fn decoder_rejects_malformed_outputs() {
+        for (values, shape) in [
+            (vec![], vec![]),
+            (vec![0.0; 39], vec![1, 39]),
+            (vec![0.0; 41], vec![1, 40]),
+            (vec![], vec![0, 40]),
         ] {
-            let result = scanner.scan(&image).unwrap();
-            let data = result.parsed.unwrap();
-            assert!(data.checksum_consistent(), "{name}");
-            assert_eq!(data.surname, "TESTER", "{name}");
-            assert_eq!(data.given_names, "ANNA MARIA", "{name}");
-            assert_eq!(data.full_document_number(), "X12345678", "{name}");
-            // Also exercise a vertical oriented frame, without changing CLI strategy.
-            let rotated = imageops::rotate90(&image);
-            assert!(scanner.scan(&rotated).is_ok(), "{name}/90");
+            assert!(decode_recognition(&values, &shape).is_err(), "{shape:?}");
         }
-        for name in ["parse-failed.png", "checksum-failed.png"] {
-            let image = image::open(fixtures.join(name)).unwrap().to_rgb8();
-            let result = scanner.scan(&image).unwrap();
-            if name == "parse-failed.png" {
-                assert!(result.parsed.is_err());
-            } else {
-                assert!(!result.parsed.unwrap().checksum_consistent());
+    }
+
+    #[test]
+    fn decoder_skips_padding_and_trailing_empty_lines() {
+        const CLASSES: usize = 40;
+        for (classes, expected) in [
+            (vec![0, 3, 0, 2, 2, 1], Some(vec!["A".to_owned()])),
+            (vec![0, 0, 1], None),
+            (vec![2, 2, 1], None),
+        ] {
+            let mut values = vec![0.0; classes.len() * CLASSES];
+            for (step, class) in classes.iter().enumerate() {
+                values[step * CLASSES + class] = 1.0;
             }
+            let result = decode_recognition(&values, &[1, classes.len(), CLASSES]);
+            assert_eq!(result.ok(), expected);
         }
     }
 
