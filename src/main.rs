@@ -1,3 +1,4 @@
+mod batch;
 mod image_processing;
 mod scanner;
 
@@ -21,7 +22,7 @@ use scanner::{MrzScanner, ScanResult};
     version
 )]
 struct Args {
-    /// Path to a JPEG or PNG photo of an ICAO document.
+    /// Path to a JPEG/PNG photo or a directory of photos (not recursive).
     image: PathBuf,
 
     /// Directory containing the detection and recognition ONNX models.
@@ -31,6 +32,15 @@ struct Args {
     /// ONNX Runtime intra-op threads per model.
     #[arg(long, default_value_t = 2)]
     threads: usize,
+
+    /// Number of images processed concurrently; each worker owns two model sessions.
+    #[arg(long, default_value_t = 1)]
+    workers: usize,
+
+    /// Write JSONL to a new file (refuses to overwrite existing files).
+    /// Directories default to JSONL on stdout; single images default to text.
+    #[arg(long)]
+    output: Option<PathBuf>,
 
     /// Save intermediate heatmaps and rectified MRZ images (contains personal data).
     #[arg(long)]
@@ -111,6 +121,12 @@ fn exit_code(result: Result<bool>) -> ExitCode {
 fn run(args: Args) -> Result<bool> {
     if args.threads == 0 {
         bail!("--threads must be greater than zero");
+    }
+    if args.workers == 0 {
+        bail!("--workers must be greater than zero");
+    }
+    if args.image.is_dir() || args.output.is_some() {
+        return batch::run(&args);
     }
 
     let image = image::open(&args.image)

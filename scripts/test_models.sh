@@ -10,7 +10,8 @@ for model in mrz_detection_20250222_fp32.onnx mrz_recognition_20250221_fp32.onnx
     fi
 done
 
-# Serial execution avoids loading multiple ONNX pipelines concurrently (~1 GiB each).
+# Run tests serially to bound memory (~1 GiB per pipeline as a rough guide).
+# The batch integration test itself deliberately loads two worker pipelines.
 cargo test --locked --release --all-targets -- --ignored --test-threads=1
 cargo build --locked --release
 TARGET_DIR="$(cargo metadata --locked --no-deps --format-version 1 |

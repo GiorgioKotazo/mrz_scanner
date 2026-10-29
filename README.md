@@ -14,6 +14,8 @@ A local Rust CLI for extracting data from the machine-readable zone (MRZ) of pas
 - Parsing of TD1/TD2/TD3/MRV-A/MRV-B and check digit validation using `mrz`.
 - Output of the raw MRZ, structured fields, and the result of each check.
 - Stops at the first clean checksum-valid result in any supported format; otherwise selects the best candidate.
+- Nonrecursive directory processing with a bounded CPU worker pool and reusable model sessions.
+- Streaming JSONL results to stdout or a new output file; per-image errors do not stop a directory scan.
 
 ## Building
 
@@ -64,6 +66,75 @@ Usage errors are reported on stderr without an MRZ candidate; help and version
 are written to stdout. Code `2` is reserved for unverified scan results, not CLI errors.
 
 With exit code `2`, the data must not be considered verified: another photo or manual verification is required.
+
+### Directories and JSONL output (CPU)
+
+The positional argument accepts either a single image or a directory. A single
+image without `--output` retains the text output and exit codes described above.
+Directories produce one JSON object per image (JSONL):
+
+```bash
+# Defaults: one worker, two ONNX intra-op threads per model, JSONL on stdout.
+./target/release/mrz_scanner ./images
+
+# Independent reusable scanners process up to two images concurrently.
+./target/release/mrz_scanner ./images --workers 2 --threads 2 --output results.jsonl
+
+# A single image can also be written as JSONL.
+./target/release/mrz_scanner ./passport.jpg --output passport.jsonl
+```
+
+- Only regular files with `.jpg`, `.jpeg`, or `.png` extensions are selected,
+  case-insensitively. Subdirectories, symlinks inside the directory, and other
+  extensions are skipped. An empty directory (no matching files) is an error.
+- `--workers` defaults to `1` and must be greater than zero. Actual worker count
+  is capped at the number of input images; a single image uses one scanner.
+  `--threads` remains `2` by default and controls **intra-model** parallelism,
+  not image concurrency. CPU is the only configured execution backend.
+- Each worker loads its two model sessions once and reuses them. Workers share
+  the ONNX Runtime environment, not their model sessions. Increasing workers
+  increases memory use and can hurt performance if CPU/RAM are already saturated;
+  measure throughput on your hardware rather than assuming linear scaling.
+- Directory paths are collected and sorted, but images are decoded only when a
+  worker is ready. The result queue is bounded. Records are written and flushed
+  as they become available, so their order is **not guaranteed** with multiple
+  workers. A flush is not a power-loss durability guarantee.
+- Without `--output`, directory JSONL goes to stdout. With `--output`, JSONL goes
+  to that file and stdout stays empty. Output files are created exclusively:
+  existing files are **never overwritten**, and parent directories must exist.
+  A fatal startup error may leave a newly created empty output file; a write
+  failure may leave partial output. Appending/resuming is not implemented.
+- Progress and a final count of `ok`, `unverified`, and `error` records go to
+  stderr for directory scans. An unreadable image or missing MRZ produces an
+  `error` record and processing continues. Model-loading and output-write errors
+  are fatal to the whole run.
+
+Batch exit codes: **0** if every image has checksum-consistent MRZ data;
+**2** if at least one is unverified and none has a processing error; **1** if any
+image has a processing error, or on a fatal CLI/setup/output error. Recovered
+checksum-consistent results retain status `ok` with `damaged_recovery: true`,
+just as in text mode. These codes also apply to a single image with `--output`.
+
+JSONL schema:
+
+| Field | Meaning |
+|---|---|
+| `path`, `status` | Input path and `ok`, `unverified`, or `error` |
+| `error` | Processing error with context; present on `error` records |
+| `ocr_lines`, `normalized_mrz` | Raw OCR array and parsed/normalized MRZ string (or `null` if parsing failed) |
+| `polygon` | Four `[x, y]` pairs in original-image pixels, with the same convention as text output |
+| `rotation`, `center_crop` | Selected attempt's clockwise rotation and crop flag |
+| `checksum_consistent`, `damaged_recovery` | Checksum and recovery flags; not authenticity verification |
+| `document` | Parsed fields (or `null`): `format`, `document_type`, full `document_number`, `surname`, `given_names`, `sex`, `date_of_birth`, `nationality`, `issuing_country`, `date_of_expiry`; nonempty optional fields use the names below |
+| `checks` | `document_number`, `date_of_birth`, `date_of_expiry`, `personal_number`, `composite`: each `true`/`false`/`null` (not applicable); the whole object is `null` if parsing failed |
+| `parse_error` | Parse error string, otherwise `null` |
+| `debug_directory` | Per-image debug destination, only for directory scans with `--debug-dir` |
+
+Processing-error records contain only `path`, `status`, `error`, and, when
+requested, `debug_directory`. Candidate-related fields are absent. Format values
+are `Td1`, `Td2`, `Td3`, `MrvA`, or `MrvB`. Dates and sex use the same text
+representations as single-image output. **JSONL contains personal data** and
+must be stored and shared accordingly.
 
 ### Document fields
 
@@ -149,6 +220,13 @@ memory are tested, but neither guarantees OCR accuracy. These cases remain expli
 
 The detection model input, heatmap, binarization, and aligned MRZ are saved. **These files contain personal data** and must not end up in logs or version control.
 
+For a directory, each image gets a separate numbered subdirectory under
+`--debug-dir` (for example `debug/00000000`), based on its sorted input index.
+The JSONL `debug_directory` field maps the input path to this destination,
+preventing collisions between workers and between equal stems such as
+`photo.jpg` and `photo.png`. A decode failure may leave no debug files. Use a
+fresh debug directory for each run to avoid overwriting an earlier run's images.
+
 ## Tests
 
 Tests are split by purpose; the default suite does not need DOCSAID model files:
@@ -157,7 +235,9 @@ Tests are split by purpose; the default suite does not need DOCSAID model files:
 |---|---|---|
 | Fast unit tests | `src/image_processing.rs`, `src/scanner.rs`, `src/geometry_tests.rs`, `src/score_tests.rs`, `src/output_tests.rs` | BGR/NCHW, normalization, decoder, Otsu, bilinear resize/letterbox, odd dimensions, geometry, rotations/crop, ranking, formatting |
 | Model-free orchestration | `src/attempt_tests.rs` | Injected scan results, attempt order/early stop, candidate selection, recovery, output and exit status |
-| Model-free CLI integration | `tests/cli.rs` | Arguments, help/version, missing models, missing/undecodable images, exit codes |
+| Model-free batch tests | `src/batch_tests.rs` | Directory filtering, JSONL schema, state reuse, per-image errors, output errors, worker panics, no overwrite |
+| Model-free CLI integration | `tests/cli.rs` | Arguments/defaults, help/version, missing models, missing/undecodable images, empty directories, no overwrite, exit codes |
+| CPU batch model integration (explicit) | `tests/batch_models.rs` | Defaults, file/stdout JSONL, mixed results with 1/2 workers, debug isolation, single-image JSONL |
 | ONNX model integration (explicit) | `src/scanner_model_tests.rs`, `tests/models.rs` | DOCSAID specimen, all five formats, rotations/crop, no-MRZ, unverified candidates, small/perspective documents, fields and checksums |
 | Public image regressions (explicit) | `tests/regression/` | OCR/fields/checksum/polygon baseline, large/panoramic inputs, documented OCR limitations |
 
@@ -200,8 +280,9 @@ cargo test --locked --release --all-targets -- --ignored --test-threads=1
 The script fails if models are missing; it never silently skips them or downloads
 them implicitly. It runs all ignored Rust model tests serially, builds the release
 CLI, then runs the full public Python regression suite, including slow cases.
-Serial inference avoids loading multiple ~1 GiB pipelines concurrently. Only
-public/synthetic fixtures are used; private files are never part of this script or CI.
+Tests run serially to limit concurrent pipeline memory use; the batch integration
+test deliberately exercises two workers (budget for two scanner pipelines).
+Only public/synthetic fixtures are used; private files are never part of this script or CI.
 The regression runner reports four documented OCR cases as `XFAIL` and rejects new
 contract violations or baseline changes; Rust model tests have no expected failures.
 See [the regression suite](tests/regression/README.md) for details.

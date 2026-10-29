@@ -35,12 +35,22 @@ pub struct ScanResult {
 impl MrzScanner {
     pub fn new(models_dir: &Path, threads: usize) -> Result<Self> {
         let environment = ort::init().build()?;
+        Self::with_environment(&environment, models_dir, threads)
+    }
+
+    /// Multiple worker scanners must share the process-wide ORT environment,
+    /// while retaining independent model sessions and their own thread pools.
+    pub fn with_environment(
+        environment: &Environment,
+        models_dir: &Path,
+        threads: usize,
+    ) -> Result<Self> {
         let detection_path = models_dir.join(DETECTION_MODEL);
         let recognition_path = models_dir.join(RECOGNITION_MODEL);
 
         Ok(Self {
-            detection: OnnxModel::new(&environment, &detection_path, threads)?,
-            recognition: OnnxModel::new(&environment, &recognition_path, threads)?,
+            detection: OnnxModel::new(environment, &detection_path, threads)?,
+            recognition: OnnxModel::new(environment, &recognition_path, threads)?,
             #[cfg(test)]
             recognition_runs: 0,
         })

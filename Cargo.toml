@@ -13,6 +13,10 @@ imageproc = { version = "0.27", default-features = false }
 mrz = "0.9.1"
 ndarray = "0.17"
 ort = "=2.0.0-rc.15"
+serde_json = "1.0"
+
+[dev-dependencies]
+tempfile = "3"
 
 [profile.release]
 lto = "thin"
