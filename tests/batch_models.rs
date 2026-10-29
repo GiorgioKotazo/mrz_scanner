@@ -1,9 +1,10 @@
 //! Explicit CPU batch integration tests; run serially with the existing model suite.
 mod support;
+use calamine::{Data, Reader, Xlsx, open_workbook};
 use serde_json::Value;
 use std::collections::BTreeMap;
 use std::path::Path;
-use support::{assert_no_candidate, cli, fixture};
+use support::{assert_no_candidate, cli, fixture, root};
 
 fn copy(name: &str, dir: &Path, destination: &str) {
     std::fs::copy(fixture(name), dir.join(destination)).unwrap();
@@ -19,6 +20,119 @@ fn records(bytes: &[u8]) -> BTreeMap<String, Value> {
         assert!(records.insert(name, json).is_none());
     }
     records
+}
+
+fn excel_records(path: &Path) -> BTreeMap<String, BTreeMap<String, Data>> {
+    let mut workbook: Xlsx<_> = open_workbook(path).unwrap();
+    let range = workbook.worksheet_range("Results").unwrap();
+    let mut rows = range.rows();
+    let headers = rows.next().unwrap();
+    let mut records = BTreeMap::new();
+    for row in rows {
+        let fields: BTreeMap<_, _> = headers
+            .iter()
+            .zip(row)
+            .map(|(key, value)| (key.to_string(), value.clone()))
+            .collect();
+        let path = fields["path"].to_string();
+        let name = Path::new(&path)
+            .file_name()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_owned();
+        assert!(records.insert(name, fields).is_none());
+    }
+    records
+}
+
+#[test]
+#[ignore = "requires DOCSAID ONNX models; run scripts/test_models.sh"]
+fn single_image_excel_defaults_preserve_relative_and_absolute_paths() {
+    let dir = tempfile::tempdir().unwrap();
+    copy("td3.png", dir.path(), "input.png");
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_mrz_scanner"))
+        .current_dir(dir.path())
+        .args(["input.png", "--output", "results.xlsx", "--models-dir"])
+        .arg(root().join("models"))
+        .output()
+        .unwrap();
+    assert_no_candidate(&output, 0);
+    assert!(output.stdout.is_empty());
+    let records = excel_records(&dir.path().join("results.xlsx"));
+    assert_eq!(records.len(), 1);
+    assert_eq!(
+        records["input.png"]["path"],
+        Data::String("input.png".into())
+    );
+    assert_eq!(
+        records["input.png"]["photo_path"],
+        Data::String(
+            dir.path()
+                .canonicalize()
+                .unwrap()
+                .join("input.png")
+                .to_string_lossy()
+                .into_owned()
+        )
+    );
+    assert_eq!(records["input.png"]["status"], Data::String("ok".into()));
+}
+
+#[test]
+#[ignore = "requires DOCSAID ONNX models; run scripts/test_models.sh"]
+fn excel_directory_saves_valid_unverified_and_error_rows_before_exit_one() {
+    let dir = tempfile::tempdir().unwrap();
+    let destination = tempfile::tempdir().unwrap();
+    copy("td3.png", dir.path(), "valid.png");
+    copy("checksum-failed.png", dir.path(), "checksum.png");
+    copy("parse-failed.png", dir.path(), "parse.png");
+    copy("white.png", dir.path(), "white.png");
+    std::fs::write(dir.path().join("broken.jpg"), b"broken").unwrap();
+    let path = destination.path().join("results.xlsx");
+    let output = cli(&[
+        dir.path().to_str().unwrap(),
+        "--workers",
+        "2",
+        "--threads",
+        "1",
+        "--output",
+        path.to_str().unwrap(),
+    ]);
+    assert_no_candidate(&output, 1);
+    assert!(output.stdout.is_empty());
+    let records = excel_records(&path);
+    assert_eq!(records.len(), 5);
+    for (name, status) in [
+        ("valid.png", "ok"),
+        ("checksum.png", "unverified"),
+        ("parse.png", "unverified"),
+        ("white.png", "error"),
+        ("broken.jpg", "error"),
+    ] {
+        assert_eq!(records[name]["status"], Data::String(status.into()));
+        assert_eq!(
+            records[name]["photo_path"],
+            Data::String(dir.path().join(name).to_string_lossy().into_owned())
+        );
+    }
+    assert_eq!(
+        records["valid.png"]["surname"],
+        Data::String("TESTER".into())
+    );
+    assert_eq!(
+        records["valid.png"]["document_number"],
+        Data::String("X12345678".into())
+    );
+    assert_eq!(
+        records["valid.png"]["checksum_consistent"],
+        Data::Bool(true)
+    );
+    assert!(!records["parse.png"]["parse_error"].to_string().is_empty());
+    assert!(!records["broken.jpg"]["error"].to_string().is_empty());
+    assert!(
+        String::from_utf8_lossy(&output.stderr).contains("Summary: 1 ok, 2 unverified, 2 errors")
+    );
 }
 
 #[test]
@@ -100,7 +214,7 @@ fn parallel_directory_preserves_single_worker_results_and_isolates_debug_files()
 
 #[test]
 #[ignore = "requires DOCSAID ONNX models; run scripts/test_models.sh"]
-fn jsonl_output_file_works_for_single_images_and_directories() {
+fn output_files_work_for_single_images_and_directories() {
     let dir = tempfile::tempdir().unwrap();
     let destination = tempfile::tempdir().unwrap();
     copy("checksum-failed.png", dir.path(), "input.png");
@@ -108,20 +222,31 @@ fn jsonl_output_file_works_for_single_images_and_directories() {
         ("single", dir.path().join("input.png")),
         ("directory", dir.path().to_owned()),
     ] {
-        let output_path = destination.path().join(format!("{name}.jsonl"));
-        let output = cli(&[
-            input.to_str().unwrap(),
-            "--output",
-            output_path.to_str().unwrap(),
-            // Only one input: do not allocate more than one worker's models.
-            "--workers",
-            "100",
-            "--no-rotate",
-        ]);
-        assert_eq!(output.status.code(), Some(2), "{output:?}");
-        assert!(output.stdout.is_empty());
-        let results = records(&std::fs::read(output_path).unwrap());
-        assert_eq!(results.len(), 1);
-        assert_eq!(results["input.png"]["status"], "unverified");
+        for extension in ["jsonl", "XLSX"] {
+            let output_path = destination.path().join(format!("{name}.{extension}"));
+            let output = cli(&[
+                input.to_str().unwrap(),
+                "--output",
+                output_path.to_str().unwrap(),
+                // Only one input: do not allocate more than one worker's models.
+                "--workers",
+                "100",
+                "--no-rotate",
+            ]);
+            assert_eq!(output.status.code(), Some(2), "{output:?}");
+            assert!(output.stdout.is_empty());
+            if extension == "jsonl" {
+                let results = records(&std::fs::read(output_path).unwrap());
+                assert_eq!(results.len(), 1);
+                assert_eq!(results["input.png"]["status"], "unverified");
+            } else {
+                let results = excel_records(&output_path);
+                assert_eq!(results.len(), 1);
+                assert_eq!(
+                    results["input.png"]["status"],
+                    Data::String("unverified".into())
+                );
+            }
+        }
     }
 }

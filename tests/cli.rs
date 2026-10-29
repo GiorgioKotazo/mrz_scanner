@@ -58,18 +58,20 @@ fn existing_output_is_not_overwritten_in_either_mode() {
     let dir = tempfile::tempdir().unwrap();
     let image = dir.path().join("input.png");
     std::fs::copy(fixture("white.png"), &image).unwrap();
-    let destination = dir.path().join("results.jsonl");
-    std::fs::write(&destination, b"previous results").unwrap();
-    for input in [dir.path(), image.as_path()] {
-        let output = cli(&[
-            input.to_str().unwrap(),
-            "--output",
-            destination.to_str().unwrap(),
-        ]);
-        assert_no_candidate(&output, 1);
-        assert!(output.stdout.is_empty());
-        assert!(String::from_utf8_lossy(&output.stderr).contains("must not already exist"));
-        assert_eq!(std::fs::read(&destination).unwrap(), b"previous results");
+    for extension in ["jsonl", "xlsx", "XLSX"] {
+        let destination = dir.path().join(format!("results.{extension}"));
+        std::fs::write(&destination, b"previous results").unwrap();
+        for input in [dir.path(), image.as_path()] {
+            let output = cli(&[
+                input.to_str().unwrap(),
+                "--output",
+                destination.to_str().unwrap(),
+            ]);
+            assert_no_candidate(&output, 1);
+            assert!(output.stdout.is_empty());
+            assert!(String::from_utf8_lossy(&output.stderr).contains("must not already exist"));
+            assert_eq!(std::fs::read(&destination).unwrap(), b"previous results");
+        }
     }
 }
 

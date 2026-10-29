@@ -16,6 +16,7 @@ A local Rust CLI for extracting data from the machine-readable zone (MRZ) of pas
 - Stops at the first clean checksum-valid result in any supported format; otherwise selects the best candidate.
 - Nonrecursive directory processing with a bounded CPU worker pool and reusable model sessions.
 - Streaming JSONL results to stdout or a new output file; per-image errors do not stop a directory scan.
+- Excel (`.xlsx`) export with document fields, photo paths, verification and error statuses, using memory-bounded row-by-row writing.
 
 ## Building
 
@@ -71,7 +72,8 @@ With exit code `2`, the data must not be considered verified: another photo or m
 
 The positional argument accepts either a single image or a directory. A single
 image without `--output` retains the text output and exit codes described above.
-Directories produce one JSON object per image (JSONL):
+Directories default to one JSON object per image (JSONL); use an `.xlsx` output
+filename for an [Excel workbook](#excel-xlsx-output):
 
 ```bash
 # Defaults: one worker, two ONNX intra-op threads per model, JSONL on stdout.
@@ -96,12 +98,15 @@ Directories produce one JSON object per image (JSONL):
   increases memory use and can hurt performance if CPU/RAM are already saturated;
   measure throughput on your hardware rather than assuming linear scaling.
 - Directory paths are collected and sorted, but images are decoded only when a
-  worker is ready. The result queue is bounded. Records are written and flushed
-  as they become available, so their order is **not guaranteed** with multiple
-  workers. A flush is not a power-loss durability guarantee.
-- Without `--output`, directory JSONL goes to stdout. With `--output`, JSONL goes
-  to that file and stdout stays empty. Output files are created exclusively:
-  existing files are **never overwritten**, and parent directories must exist.
+  worker is ready. The result queue is bounded. Results are consumed as they
+  become available, so their order is **not guaranteed** with multiple workers.
+  JSONL records are flushed after every record; a flush is not a power-loss
+  durability guarantee. XLSX must be finalized at the end of the run.
+- Without `--output`, directory JSONL goes to stdout. With `--output`, an `.xlsx`
+  extension (case-insensitive) selects Excel; all other extensions, or no extension,
+  retain JSONL output. Stdout stays empty in either file-output mode.
+  Output files are created exclusively: existing files are **never overwritten**,
+  and parent directories must exist.
   A fatal startup error may leave a newly created empty output file; a write
   failure may leave partial output. Appending/resuming is not implemented.
 - Progress and a final count of `ok`, `unverified`, and `error` records go to
@@ -135,6 +140,70 @@ requested, `debug_directory`. Candidate-related fields are absent. Format values
 are `Td1`, `Td2`, `Td3`, `MrvA`, or `MrvB`. Dates and sex use the same text
 representations as single-image output. **JSONL contains personal data** and
 must be stored and shared accordingly.
+
+### Excel (XLSX) output
+
+```bash
+# Directory with default workers=1, threads=2.
+./target/release/mrz_scanner ./images --output results.xlsx
+
+# Parallel CPU scanning; one output thread writes the workbook.
+./target/release/mrz_scanner ./images --workers 2 --threads 2 --output results.xlsx
+
+# Single-image export; the ordinary text mode remains unchanged without --output.
+./target/release/mrz_scanner ./passport.jpg --output passport.xlsx
+```
+
+The `Results` worksheet contains **one row per image**, including unverified
+results and processing errors. It has bold headers, a frozen header row, fixed
+column widths and autofilter controls. Output order follows completion order,
+just as with JSONL. No Python, Excel installation or intermediate JSONL is needed.
+
+Columns include:
+
+- `photo_path`: absolute path to the input photo, resolved against the process's
+  working directory, without requiring the file to exist. `path` preserves the
+  supplied path exactly as in JSONL. Paths are plain text, not hyperlinks;
+  photographs are **not embedded**. Paths refer to the original machine/files.
+- All parsed `document` fields from the JSONL schema, flattened into columns,
+  including `personal_number`, `optional_data_1`, and `optional_data_2`.
+  These are MRZ data, not additional fields from the visual inspection zone.
+- `status` (`ok`, `unverified`, `error`), `checksum_consistent`, and
+  `damaged_recovery`. A checksum-consistent recovered result is still `ok`,
+  not proof of authenticity.
+- `ocr_lines` (joined with newlines), `normalized_mrz`, and individual checks:
+  `check_document_number`, `check_date_of_birth`, `check_date_of_expiry`,
+  `check_personal_number`, `check_composite` (`OK`, `FAILED`, or `N/A`).
+- `parse_error`, `error`, `rotation`, `center_crop`, `polygon` (JSON text in
+  original-image coordinates), and `debug_directory` when requested.
+
+Absent data is left blank. Checks are blank if parsing failed; `N/A` means a
+check is not applicable to a successfully parsed document. Names, numbers,
+optional fields, paths and MRZ are explicit **text cells**, not formulas. Document
+numbers retain leading zeros and are not subject to Excel numeric rounding.
+Dates are text too, preserving partially unknown MRZ dates. Boolean flags are
+Excel booleans and rotation is numeric. Excel therefore cannot automatically
+perform date arithmetic on these text dates without conversion.
+
+Export uses `rust_xlsxwriter`'s **constant-memory worksheets**: completed rows
+are flushed to temporary XML files beside the destination workbook, rather than
+retained as an in-memory table. This requires writable temporary disk space in
+that directory; a memory-backed output filesystem will still consume RAM.
+On reaching Excel's 1,048,576-row sheet limit (including the header), export
+continues on `Results 2`, `Results 3`, etc., with repeated headers and filters.
+Cells longer than Excel's 32,767 UTF-16-unit limit cause an explicit export error,
+not silent truncation; JSONL does not have that cell limit.
+
+**XLSX is only readable after finalization.** The workbook is saved even if
+individual images failed or checksums did not match; the usual exit codes
+`0`/`2`/`1` still apply. Startup, export or finalization failures are fatal and
+can leave an empty or incomplete destination. An interrupted run is not a
+recoverable partial workbook. Use JSONL when retaining completed records during
+an interrupted run is important. Appending, resuming, and converting an existing
+JSONL file are not implemented.
+
+**Workbooks and temporary XML contain personal data and are not encrypted.**
+Use appropriately protected storage, as for JSONL and debug images.
 
 ### Document fields
 
@@ -222,7 +291,7 @@ The detection model input, heatmap, binarization, and aligned MRZ are saved. **T
 
 For a directory, each image gets a separate numbered subdirectory under
 `--debug-dir` (for example `debug/00000000`), based on its sorted input index.
-The JSONL `debug_directory` field maps the input path to this destination,
+The JSONL `debug_directory` field (or the matching Excel column) maps the input path to this destination,
 preventing collisions between workers and between equal stems such as
 `photo.jpg` and `photo.png`. A decode failure may leave no debug files. Use a
 fresh debug directory for each run to avoid overwriting an earlier run's images.
@@ -235,9 +304,10 @@ Tests are split by purpose; the default suite does not need DOCSAID model files:
 |---|---|---|
 | Fast unit tests | `src/image_processing.rs`, `src/scanner.rs`, `src/geometry_tests.rs`, `src/score_tests.rs`, `src/output_tests.rs` | BGR/NCHW, normalization, decoder, Otsu, bilinear resize/letterbox, odd dimensions, geometry, rotations/crop, ranking, formatting |
 | Model-free orchestration | `src/attempt_tests.rs` | Injected scan results, attempt order/early stop, candidate selection, recovery, output and exit status |
-| Model-free batch tests | `src/batch_tests.rs` | Directory filtering, JSONL schema, state reuse, per-image errors, output errors, worker panics, no overwrite |
+| Model-free batch tests | `src/batch_tests.rs` | Directory filtering, JSONL schema, output format dispatch, state reuse, per-image errors, output errors, worker panics, no overwrite |
+| Model-free Excel tests | `src/excel_tests.rs` | Independent XLSX read-back, text/number preservation, formula safety, headers/filters, sheet rollover, error rows and write failures |
 | Model-free CLI integration | `tests/cli.rs` | Arguments/defaults, help/version, missing models, missing/undecodable images, empty directories, no overwrite, exit codes |
-| CPU batch model integration (explicit) | `tests/batch_models.rs` | Defaults, file/stdout JSONL, mixed results with 1/2 workers, debug isolation, single-image JSONL |
+| CPU batch model integration (explicit) | `tests/batch_models.rs` | Defaults, file/stdout JSONL, single-image/directory XLSX, mixed results with 1/2 workers, debug isolation, paths and exit codes |
 | ONNX model integration (explicit) | `src/scanner_model_tests.rs`, `tests/models.rs` | DOCSAID specimen, all five formats, rotations/crop, no-MRZ, unverified candidates, small/perspective documents, fields and checksums |
 | Public image regressions (explicit) | `tests/regression/` | OCR/fields/checksum/polygon baseline, large/panoramic inputs, documented OCR limitations |
 

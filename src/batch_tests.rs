@@ -117,6 +117,69 @@ fn output_creation_never_truncates_existing_files() {
 }
 
 #[test]
+fn output_dispatch_preserves_jsonl_and_exports_all_document_formats_to_excel() {
+    use calamine::{Data, Reader, Xlsx, open_workbook};
+    let dir = tempfile::tempdir().unwrap();
+    let stdout = io::stdout();
+    for name in [
+        "results.jsonl",
+        "results.txt",
+        "results",
+        "results.xlsx",
+        "UPPER.XLSX",
+    ] {
+        let path = dir.path().join(name);
+        let mut output = Output::new(Some(&path), &stdout).unwrap();
+        for format in FORMATS {
+            let record =
+                Record::from_result(Path::new("photo.png"), Ok(candidate(valid(format, true))));
+            output.write(&record).unwrap();
+        }
+        output.finish().unwrap();
+        if name.to_lowercase().ends_with(".xlsx") {
+            let mut workbook: Xlsx<_> = open_workbook(path).unwrap();
+            let range = workbook.worksheet_range("Results").unwrap();
+            assert_eq!(range.height(), FORMATS.len() + 1);
+            let headers = range.rows().next().unwrap();
+            let column = |name: &str| {
+                headers
+                    .iter()
+                    .position(|value| value == &Data::String(name.into()))
+                    .unwrap()
+            };
+            for (row, format) in range.rows().skip(1).zip(FORMATS) {
+                assert_eq!(row[column("format")], Data::String(format!("{format:?}")));
+                assert_eq!(row[column("surname")], Data::String("TESTER".into()));
+                assert_eq!(row[column("status")], Data::String("ok".into()));
+                assert_eq!(row[column("damaged_recovery")], Data::Bool(true));
+                if format == mrz::Format::Td3 {
+                    assert_eq!(
+                        row[column("personal_number")],
+                        Data::String("ZE184226B".into())
+                    );
+                }
+                if format == mrz::Format::MrvA {
+                    assert_eq!(
+                        row[column("optional_data_1")],
+                        Data::String("VISATEST".into())
+                    );
+                    assert_eq!(row[column("check_composite")], Data::String("N/A".into()));
+                }
+            }
+        } else {
+            let text = fs::read_to_string(path).unwrap();
+            assert_eq!(text.lines().count(), FORMATS.len());
+            for line in text.lines() {
+                let record: Value = serde_json::from_str(line).unwrap();
+                assert_eq!(record["status"], "ok");
+            }
+        }
+    }
+    // No intermediate worksheet XML files remain after finalization.
+    assert_eq!(fs::read_dir(dir.path()).unwrap().count(), 5);
+}
+
+#[test]
 fn pool_reuses_states_and_processes_every_path_once_despite_image_errors() {
     for workers in [1, 2, 4] {
         let paths: Vec<_> = (0..40).map(|i| PathBuf::from(format!("{i}.png"))).collect();

@@ -1,4 +1,5 @@
 mod batch;
+mod excel;
 mod image_processing;
 mod scanner;
 
@@ -37,7 +38,7 @@ struct Args {
     #[arg(long, default_value_t = 1)]
     workers: usize,
 
-    /// Write JSONL to a new file (refuses to overwrite existing files).
+    /// Write XLSX for a .xlsx extension, otherwise JSONL, to a new file (no overwrite).
     /// Directories default to JSONL on stdout; single images default to text.
     #[arg(long)]
     output: Option<PathBuf>,

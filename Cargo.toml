@@ -14,9 +14,12 @@ mrz = "0.9.1"
 ndarray = "0.17"
 ort = "=2.0.0-rc.15"
 serde_json = "1.0"
+rust_xlsxwriter = { version = "0.102", features = ["constant_memory"] }
 
 [dev-dependencies]
+calamine = "0.37"
 tempfile = "3"
+zip = { version = "9", default-features = false, features = ["deflate"] }
 
 [profile.release]
 lto = "thin"

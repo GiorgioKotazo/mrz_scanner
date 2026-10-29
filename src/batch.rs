@@ -10,6 +10,7 @@ use std::thread;
 use anyhow::{Context, Result, bail};
 use serde_json::{Value, json};
 
+use crate::excel::ExcelWriter;
 use crate::{Args, Candidate, MrzScanner, run_attempts};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -128,7 +129,7 @@ impl Summary {
 
     fn outcome(&self) -> Result<bool> {
         if self.errors != 0 {
-            bail!("{} image(s) failed; see JSONL error records", self.errors);
+            bail!("{} image(s) failed; see output error records", self.errors);
         }
         Ok(self.unverified == 0)
     }
@@ -186,6 +187,49 @@ fn write_record(out: &mut impl Write, record: &Record) -> Result<()> {
     Ok(())
 }
 
+enum Output<'a> {
+    Jsonl(Box<dyn Write + 'a>),
+    Excel(Box<ExcelWriter>),
+}
+
+impl<'a> Output<'a> {
+    fn new(path: Option<&Path>, stdout: &'a io::Stdout) -> Result<Self> {
+        let Some(path) = path else {
+            return Ok(Self::Jsonl(Box::new(stdout.lock())));
+        };
+        let file = output_file(path)?;
+        if path
+            .extension()
+            .and_then(|ext| ext.to_str())
+            .is_some_and(|ext| ext.eq_ignore_ascii_case("xlsx"))
+        {
+            let parent = path
+                .parent()
+                .filter(|parent| !parent.as_os_str().is_empty())
+                .unwrap_or_else(|| Path::new("."));
+            let writer = ExcelWriter::new(file, parent).context("cannot initialize XLSX output")?;
+            Ok(Self::Excel(Box::new(writer)))
+        } else {
+            // All other extensions retain the previous JSONL behavior.
+            Ok(Self::Jsonl(Box::new(BufWriter::new(file))))
+        }
+    }
+
+    fn write(&mut self, record: &Record) -> Result<()> {
+        match self {
+            Self::Jsonl(out) => write_record(out, record),
+            Self::Excel(out) => out.write(&record.json),
+        }
+    }
+
+    fn finish(self) -> Result<()> {
+        match self {
+            Self::Jsonl(mut out) => Ok(out.flush()?),
+            Self::Excel(out) => out.finish(),
+        }
+    }
+}
+
 /// The calling thread alone consumes/writes records. Bounded results provide
 /// backpressure; dropping the receiver on an output error stops all producers.
 /// Scanners are created once by the caller and moved, not shared behind a lock.
@@ -219,7 +263,7 @@ fn run_pool<S: Send>(
         let mut outcome = Ok(());
         for record in &receiver {
             if let Err(error) = consume(&record) {
-                outcome = Err(error.context("cannot write JSONL results"));
+                outcome = Err(error.context("cannot write results"));
                 break;
             }
             summary.add(record.status);
@@ -244,12 +288,8 @@ pub(super) fn run(args: &Args) -> Result<bool> {
     } else {
         vec![args.image.clone()]
     };
-    let file = args.output.as_deref().map(output_file).transpose()?;
     let stdout = io::stdout();
-    let mut out: Box<dyn Write + '_> = match file {
-        Some(file) => Box::new(BufWriter::new(file)),
-        None => Box::new(stdout.lock()),
-    };
+    let mut out = Output::new(args.output.as_deref(), &stdout)?;
     let workers = args.workers.min(paths.len());
     let environment = ort::init().build()?;
     let states = (0..workers)
@@ -292,7 +332,7 @@ pub(super) fn run(args: &Args) -> Result<bool> {
             record
         },
         |record| {
-            write_record(&mut out, record)?;
+            out.write(record)?;
             completed += 1;
             if directory {
                 // Best-effort diagnostics; a closed stderr must not stop output.
@@ -301,6 +341,8 @@ pub(super) fn run(args: &Args) -> Result<bool> {
             Ok(())
         },
     )?;
+    // Save a complete workbook before reporting per-image errors via exit status.
+    out.finish()?;
     if directory {
         let _ = writeln!(
             io::stderr().lock(),
